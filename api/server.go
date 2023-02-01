@@ -6,11 +6,6 @@ import (
 	"net/http"
 )
 
-type PaymentRequest struct {
-	Macaroon string // Le macaron que le client doit inclure dans chaque requete
-	Invoice  string // L'invoice que le client doit payer
-}
-
 type Server struct {
 	database map[string]int
 }
