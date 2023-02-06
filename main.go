@@ -1,4 +1,4 @@
-package lsat
+package main
 
 import (
 	http "lsat/proxy"

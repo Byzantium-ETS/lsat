@@ -32,5 +32,6 @@ type PaymentRequest struct {
 }
 
 type LightningNode interface {
-	CreateInvoice(amount SatoshiAmount, expiry time.Time, private bool, memo string, preimage string) PaymentRequest
+	CreateInvoice(value_msat SatoshiAmount, expiry time.Time, private bool, memo string, preimage string) (PaymentRequest, error)
+	SubscribeInvoice(r_hash []uint8) error
 }
