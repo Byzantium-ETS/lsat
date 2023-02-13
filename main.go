@@ -1,7 +1,7 @@
 package main
 
 import (
-	http "lsat/api"
+	http "lsat/proxy"
 )
 
 func main() {

@@ -1,15 +1,9 @@
-package http
+package proxy
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 )
-
-type PaymentRequest struct {
-	Macaroon string // Le macaron que le client doit inclure dans chaque requete
-	Invoice  string // L'invoice que le client doit payer
-}
 
 type Server struct {
 	database map[string]int
@@ -27,8 +21,8 @@ func HandlePaymentRequest(w http.ResponseWriter, r *http.Request) {
 
 	// 1. Ici on devrait générer un invoice à l'aide de notre node.
 	// 2. Si le client à son macaroon, on devrait aller le chercher dans la request, sinon on devrait en générer un.
-	m := PaymentRequest{"", ""}
-	b, _ := json.Marshal(m)
+	// m := PaymentRequest{"", ""}
+	// b, _ := json.Marshal(m)
 
-	w.Write(b) // Envoyer la requete JSON? Je suis habitué à devoir flush.
+	// w.Write(b) // Envoyer la requete JSON? Je suis habitué à devoir flush.
 }
