@@ -2,11 +2,9 @@ package secrets
 
 import (
 	"lsat/auth"
-
-	"github.com/lightningnetwork/lnd/lntypes"
 )
 
-type Secret = lntypes.Hash
+type Secret = []byte
 
 type UserId = int32
 

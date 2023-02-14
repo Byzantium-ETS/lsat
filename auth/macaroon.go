@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"hash"
 	"lsat/secrets"
+
+	"github.com/lightningnetwork/lnd/lntypes"
 )
 
 type Version = int8
@@ -18,11 +20,15 @@ func (mac Macaroon) Caveats() []Caveat {
 	return mac.caveats
 }
 
+func (mac Macaroon) Signature() string {
+	return mac.Signature()
+}
+
 // La clé utlisée pour map les macaroons dans la base de données.
 type MacaroonId struct {
 	version Version
-	hash    int64
-	Uid     int32
+	hash    lntypes.Hash
+	Uid     secrets.UserId
 }
 
 // Bakes macaroons
@@ -37,6 +43,11 @@ func NewOven(store *secrets.SecretStore, uid secrets.UserId) (Oven, error) {
 
 func (oven Oven) Attenuate(caveat Caveat) Oven {
 	oven.caveats = append(oven.caveats, caveat)
+	return oven
+}
+
+func (oven Oven) MapCaveats(caveats []Caveat) Oven {
+	oven.caveats = append(oven.caveats, caveats...)
 	return oven
 }
 
