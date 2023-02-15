@@ -1,18 +1,14 @@
 package auth
 
-const (
-	Timeout = "timeout"
-)
-
 type Caveat struct {
-	Name  string
+	Key   string
 	Value string
 }
 
-func NewCaveat(Name string, Value string) Caveat {
-	return Caveat{Name, Value}
+func NewCaveat(Key string, Value string) Caveat {
+	return Caveat{Key, Value}
 }
 
 func (caveat Caveat) ToString() string {
-	return caveat.Name + ":" + caveat.Value
+	return caveat.Key + "=" + caveat.Value
 }

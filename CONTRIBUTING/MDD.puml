@@ -1,0 +1,116 @@
+@startuml
+title Modèle du domaine
+
+skinparam class {
+  BackgroundColor<<Serveur>> #FFF4C8
+}
+
+hide stereotype
+hide empty members
+  
+entity "UserId" as Uid
+
+entity "Secret" as Sec
+
+abstract class "User" as U {
+  + uid UserId
+  + secret Secret
+}
+
+package Serveur {
+  class "Server" as Se <<Serveur>> {
+    - minter Minter
+    - router Router
+  }
+  
+  interface "SecretStore" as SS <<Serveur>>
+  
+  SS : + getSecret(uid UserId) (Secret, error)
+  SS : + createSecret(uid UserId) (Secret, error)
+  SS : + storeLSAT(uid UserId, token Token) error
+  
+  interface "Challenger" as Ch <<Serveur>>
+  
+  Ch : + Challenge(price int64, preimage Preimage) PaymentRequest
+  
+  interface "ServiceManager" as SM <<Serveur>>
+  
+  SM : + Service(service String) Service
+  SM : + Capabilities(service String) []Caveats
+  
+  class "Minter" as Mi <<Serveur>> {
+    - service ServiceManager
+    - challenger Challenger
+    - store SecretStore
+  }
+  
+  Mi : + mintLSAT(uid UserId, service Service) (PreLsat, error)
+  Mi : - authLSAT(uid UserId, lsat *LSAT) error
+
+}
+  
+class "LSAT" as LSAT {
+  macaroon Macaroon
+  preimage String
+}
+    
+class "PreLSAT" as pLSAT {
+  macaroon Macaroon
+  invoice String
+}
+  
+    
+class "Macaroon" as Mac {
+  caveats []Caveat
+  sig String
+  service String
+}
+  
+class "MacaroonId" as MacId {
+  hash Hash
+  uid UserId
+  version Version
+}
+  
+class "Caveat" as Ca {
+  name String
+  value String
+}
+
+  
+class "Service" as Ser {
+  name String
+  price int64
+}
+  
+class "PaymentRequest" as PR {
+  invoice String
+}
+
+LSAT "1" -- "1" Mac : > Sert
+pLSAT "1" -- "1" LSAT : > Génére
+Mi "1" -- "*" pLSAT : > Mint
+PR "1" -- "1" pLSAT : > Compose
+Mac "1" -- "1" pLSAT : > Compose
+
+MacId "1" -- "1" Mac : > Identifie 
+Mac "1" -- "*" Ser : > Authentifie
+Ca "*" -- "*" Mac : > Restreint
+
+Mi "1" -- "1" Ch : > Utilise
+Mi "1" -- "1" SS : > Utilise
+Mi "1" -- "1" SM : > Utilise
+
+SS "1" -- "*" U : > Contient
+SS "1" -- "*" Uid : > Utilise
+U "1" -- "1" Sec : > Possède
+Uid "1" -- "1" U : > Identifie
+Sec "1" -- "*" Mac : > Génére
+
+Ser "1" -- "*" SM : < Gère
+Ch "1" -- "*" PR : > Génére
+
+Se "1" -- "1" Mi : > Contient
+Se "1" -- "*" Ser : > Offre
+
+@enduml

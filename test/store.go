@@ -9,14 +9,14 @@ import (
 type UserProfile struct {
 	Id     UserId
 	Root   Secret
-	tokens []auth.Token
+	tokens []auth.LSAT
 }
 
 func NewUserProfile(Id UserId, Root Secret) UserProfile {
 	return UserProfile{
 		Id,
 		Root,
-		make([]auth.Token, 10),
+		make([]auth.LSAT, 10),
 	}
 }
 
@@ -36,7 +36,7 @@ func (users UserBase) GetRoot(uid UserId) (Secret, error) {
 	}
 }
 
-func (users UserBase) StoreToken(uid UserId, token auth.Token) error {
+func (users UserBase) StoreLSAT(uid UserId, token auth.LSAT) error {
 	profile, ok := users.users[uid]
 
 	if ok {
