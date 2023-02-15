@@ -1,3 +1,3 @@
 # lsat
 
-![mdd](.out/CONTRIBUTING/MDD/MDD.svg)
+![mdd](out/CONTRIBUTING/MDD/MDD.svg)
