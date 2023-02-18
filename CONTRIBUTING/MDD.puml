@@ -25,13 +25,13 @@ package Serveur {
   
   interface "SecretStore" as SS <<Serveur>>
   
-  SS : + getSecret(uid UserId) (Secret, error)
-  SS : + createSecret(uid UserId) (Secret, error)
-  SS : + storeLSAT(uid UserId, token Token) error
+  SS : + Secret(uid UserId) (Secret, error)
+  SS : + StoreToken(id TokenID, token Token) error
+  SS : + Tokens() *map[TokenID]Token
   
   interface "Challenger" as Ch <<Serveur>>
   
-  Ch : + Challenge(price int64, preimage Preimage) PaymentRequest
+  Ch : + Challenge(price int64) PaymentRequest
   
   interface "ServiceManager" as SM <<Serveur>>
   
@@ -44,17 +44,20 @@ package Serveur {
     - store SecretStore
   }
   
-  Mi : + mintLSAT(uid UserId, service Service) (PreLsat, error)
-  Mi : - authLSAT(uid UserId, lsat *LSAT) error
+  Mi : + mintToken(uid UserId, service Service) (PreLsat, error)
+  Mi : - authToken(uid UserId, lsat *Token) error
 
 }
+
+
+interface "LightningNode" as LN
   
-class "LSAT" as LSAT {
+class "Token" as Token {
   macaroon Macaroon
   preimage String
 }
     
-class "PreLSAT" as pLSAT {
+class "PreToken" as pToken {
   macaroon Macaroon
   invoice String
 }
@@ -66,7 +69,7 @@ class "Macaroon" as Mac {
   service String
 }
   
-class "MacaroonId" as MacId {
+class "TokenId" as Tid {
   hash Hash
   uid UserId
   version Version
@@ -87,13 +90,13 @@ class "PaymentRequest" as PR {
   invoice String
 }
 
-LSAT "1" -- "1" Mac : > Sert
-pLSAT "1" -- "1" LSAT : > Génére
-Mi "1" -- "*" pLSAT : > Mint
-PR "1" -- "1" pLSAT : > Compose
-Mac "1" -- "1" pLSAT : > Compose
+Token "1" -- "1" Mac : > Sert
+pToken "1" -- "1" Token : > Génére
+Mi "1" -- "*" pToken : > Mint
+PR "1" -- "1" pToken : > Compose
+Mac "1" -- "1" pToken : > Compose
 
-MacId "1" -- "1" Mac : > Identifie 
+Tid "1" -- "1" Token : > Identifie 
 Mac "1" -- "*" Ser : > Authentifie
 Ca "*" -- "*" Mac : > Restreint
 
@@ -102,7 +105,9 @@ Mi "1" -- "1" SS : > Utilise
 Mi "1" -- "1" SM : > Utilise
 
 SS "1" -- "*" U : > Contient
+SS "1" -- "*" Token : > Contient
 SS "1" -- "*" Uid : > Utilise
+SS "1" -- "*" Tid : > Utilise
 U "1" -- "1" Sec : > Possède
 Uid "1" -- "1" U : > Identifie
 Sec "1" -- "*" Mac : > Génére

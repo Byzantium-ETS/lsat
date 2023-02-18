@@ -25,13 +25,6 @@ func (mac Macaroon) Signature() string {
 	return mac.Signature()
 }
 
-// La clé utlisée pour map les macaroons dans la base de données.
-type TokenID struct {
-	version Version
-	hash    lntypes.Hash // Le hash est suffisement identifiable
-	// uid     secrets.UserId
-}
-
 // Bakes macaroons
 type Oven struct {
 	service Service
@@ -58,16 +51,20 @@ func (oven Oven) Service(service Service) Oven {
 	return oven
 }
 
-func (oven Oven) Cook() (TokenID, Macaroon, error) {
+func (oven Oven) Cook() (Macaroon, error) {
 	// Je crois que c'est ca l'idee
 	mac := hmac.New(sha256.New, oven.root)
-	mac = hmac.New(func() hash.Hash { return mac }, []byte(oven.service.ToString()))
+
+	services, err := FmtServices(oven.service)
+
+	if err == nil {
+		mac = hmac.New(func() hash.Hash { return mac }, []byte(services))
+	} else {
+		return Macaroon{}, err
+	}
+
 	for _, v := range oven.caveats {
 		mac = hmac.New(func() hash.Hash { return mac }, []byte(v.ToString()))
 	}
-	id := TokenID{
-		version: 0,
-		hash:    mac,
-	}
-	return id, Macaroon{caveats: oven.caveats, service: oven.service, sig: mac.Sum(nil)}, nil
+	return Macaroon{caveats: oven.caveats, service: oven.service, sig: mac.Sum(nil)}, nil
 }

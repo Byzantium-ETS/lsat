@@ -11,7 +11,7 @@ type Server struct {
 
 func HttpServer() {
 	fmt.Println("Server launched!")
-	http.HandleFunc("/", HandlePaymentRequest) // Retourné dans le cas où la platforme reçoit un LSAT invalide
+	http.HandleFunc("/", HandlePaymentRequest) // Retourné dans le cas où la platforme reçoit un Token invalide
 	http.ListenAndServe(":8080", nil)          // Ca devrait etre lié à la platforme?
 }
 
