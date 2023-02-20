@@ -7,6 +7,10 @@ import (
 	"github.com/lightningnetwork/lnd/lntypes"
 )
 
+const (
+	BaseVersion = 0
+)
+
 // Un Token complet
 type Token struct {
 	Mac      Macaroon
@@ -39,5 +43,5 @@ type TokenID struct {
 }
 
 func NewTokenID(uid secrets.UserId, hash lntypes.Hash) TokenID {
-	return TokenID{version: 0, uid: uid, hash: hash}
+	return TokenID{version: BaseVersion, uid: uid, hash: hash}
 }
