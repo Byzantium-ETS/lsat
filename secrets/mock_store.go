@@ -10,6 +10,13 @@ type TestStore struct {
 	tokens map[auth.TokenID]auth.Token
 }
 
+func NewTestStore() TestStore {
+	return TestStore{
+		users:  make(map[UserId]Secret),
+		tokens: make(map[auth.TokenID]auth.Token),
+	}
+}
+
 func (store *TestStore) CreateUser() UserId {
 	user := NewUserId()
 	secret := NewSecret()

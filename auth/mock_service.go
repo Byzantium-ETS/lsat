@@ -3,6 +3,8 @@ package auth
 import (
 	"context"
 	"errors"
+	"lsat/lightning"
+	"lsat/secrets"
 	"time"
 )
 
@@ -64,5 +66,16 @@ func (sm *TestServiceManager) VerifyCaveats(service Service, caveats ...Caveat) 
 				return errors.New(timeErr)
 			}
 		}
+	}
+}
+
+var secretStore secrets.TestStore = secrets.NewTestStore()
+var challenger lightning.TestChallenger = lightning.NewTestChallenger()
+
+func TestMinter() Minter {
+	return Minter{
+		service:    &TestServiceManager{},
+		secrets:    &secretStore,
+		challenger: &challenger,
 	}
 }
