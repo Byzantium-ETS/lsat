@@ -1,12 +1,19 @@
-package lightning
+package mock
 
 import (
+	"encoding/binary"
 	"errors"
-	"lsat/secrets"
+	. "lsat/lightning"
 	"math/rand"
 
 	"github.com/lightningnetwork/lnd/lntypes"
 )
+
+func uint2bytes(n uint32) []byte {
+	a := make([]byte, 32)
+	binary.LittleEndian.PutUint32(a, n)
+	return a
+}
 
 const Seed = 0
 
@@ -19,13 +26,13 @@ func NewTestChallenger() TestChallenger {
 }
 
 func (node *TestChallenger) Challenge(price int64) (lntypes.Preimage, PaymentRequest, error) {
-	preimage, err := lntypes.MakePreimage(secrets.Uint2bytes(node.rand.Uint32()))
+	preimage, err := lntypes.MakePreimage(uint2bytes(node.rand.Uint32()))
 
 	if err != nil {
-		return nil, PaymentRequest{}, errors.New("failed to create preimage!")
+		return lntypes.Preimage{}, PaymentRequest{}, errors.New("failed to create preimage!")
 	}
 
-	rhash, _ := lntypes.MakeHash(secrets.Uint2bytes(0))
+	rhash, _ := lntypes.MakeHash(uint2bytes(0))
 
 	payment_request := PaymentRequest{
 		R_hash:       rhash,

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"lsat/secrets"
+	"lsat/mock"
 	"testing"
 )
 
 func TestSecret(t *testing.T) {
-	store := secrets.NewTestStore()
+	store := mock.NewTestStore()
 
 	uid := store.CreateUser()
 

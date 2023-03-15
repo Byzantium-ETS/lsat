@@ -1,19 +1,20 @@
-package secrets
+package mock
 
 import (
 	"errors"
-	"lsat/auth"
+	"lsat/macaroon"
+	. "lsat/secrets"
 )
 
 type TestStore struct {
 	users  map[UserId]Secret
-	tokens map[auth.TokenID]auth.Token
+	tokens map[macaroon.TokenID]macaroon.Token
 }
 
 func NewTestStore() TestStore {
 	return TestStore{
 		users:  make(map[UserId]Secret),
-		tokens: make(map[auth.TokenID]auth.Token),
+		tokens: make(map[macaroon.TokenID]macaroon.Token),
 	}
 }
 
@@ -36,11 +37,11 @@ func (store *TestStore) Secret(uid UserId) (Secret, error) {
 	return secret, nil
 }
 
-func (store *TestStore) StoreToken(id auth.TokenID, token auth.Token) error {
+func (store *TestStore) StoreToken(id macaroon.TokenID, token macaroon.Token) error {
 	store.tokens[id] = token
 	return nil
 }
 
-func (store *TestStore) Tokens() *map[auth.TokenID]auth.Token {
+func (store *TestStore) Tokens() *map[macaroon.TokenID]macaroon.Token {
 	return &store.tokens
 }

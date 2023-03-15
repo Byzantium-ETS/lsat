@@ -1,10 +1,10 @@
-package auth
+package mock
 
 import (
 	"context"
 	"errors"
-	"lsat/lightning"
-	"lsat/secrets"
+	"lsat/auth"
+	. "lsat/macaroon"
 	"time"
 )
 
@@ -67,15 +67,13 @@ func (sm *TestServiceManager) VerifyCaveats(service Service, caveats ...Caveat) 
 			}
 		}
 	}
+	return nil
 }
 
-var secretStore secrets.TestStore = secrets.NewTestStore()
-var challenger lightning.TestChallenger = lightning.NewTestChallenger()
+var secretStore TestStore = NewTestStore()
+var challenger TestChallenger = NewTestChallenger()
+var serviceManager TestServiceManager = TestServiceManager{}
 
-func TestMinter() Minter {
-	return Minter{
-		service:    &TestServiceManager{},
-		secrets:    &secretStore,
-		challenger: &challenger,
-	}
+func TestMinter() auth.Minter {
+	return auth.NewMinter(&serviceManager, &secretStore, &challenger)
 }

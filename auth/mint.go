@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"lsat/lightning"
+	"lsat/macaroon"
 	"lsat/secrets"
 )
 
@@ -15,19 +16,30 @@ const (
 
 // Assure qu'un macaroon ait accès aux services
 type ServiveManager interface {
-	Services(context.Context, ...string) ([]Service, error)
-	Capabilities(context.Context, ...Service) ([]Caveat, error) // The capabilities of the service
-	VerifyCaveats(Service, ...Caveat) error                     // Retourne une erreur si les caveats ne sont plus valide, ca veut generalement dire que le macaroon est expire
+	Services(cx context.Context, names ...string) ([]macaroon.Service, error)
+	Capabilities(cx context.Context, services ...macaroon.Service) ([]macaroon.Caveat, error) // The capabilities of the service
+	VerifyCaveats(cx macaroon.Service, caveats ...macaroon.Caveat) error                      // Retourne une erreur si les caveats ne sont plus valide, ca veut generalement dire que le macaroon est expire
+}
+
+type SecretStore interface {
+	// NewSecret() (Secret, error)
+	Secret(uid secrets.UserId) (secrets.Secret, error)          // S'il n'y a pas de RootKey pour l'utilisateur, il sera créé
+	StoreToken(id macaroon.TokenID, token macaroon.Token) error // Les tokens peuvent être conservé pour des raisons d'archivage
+	Tokens() *map[macaroon.TokenID]macaroon.Token               // Tous les tokens d'un utilisateur
 }
 
 // https://github.com/lightninglabs/aperture/blob/master/mint/mint.go#L65
 type Minter struct {
 	service    ServiveManager       // Une abstraction des services offert par une application
-	secrets    secrets.SecretStore  // La source des secrets des lsats qui seront créé
+	secrets    SecretStore          // La source des secrets des lsats qui seront créé
 	challenger lightning.Challenger // Crée les challenges sous la forme d'invoices
 }
 
-func totalPrice(services ...Service) int {
+func NewMinter(service ServiveManager, secrets SecretStore, challenger lightning.Challenger) Minter {
+	return Minter{service, secrets, challenger}
+}
+
+func totalPrice(services ...macaroon.Service) int {
 	total := 0
 	for _, s := range services {
 		total += int(s.Price)
@@ -35,8 +47,8 @@ func totalPrice(services ...Service) int {
 	return total
 }
 
-func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (preToken, error) {
-	token := preToken{}
+func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (macaroon.PreToken, error) {
+	token := macaroon.PreToken{}
 
 	services, _ := minter.service.Services(context.Background(), service_names...)
 
@@ -50,41 +62,44 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (pr
 
 	caveats, err := minter.service.Capabilities(context.Background(), services...)
 
-	oven, _ := NewOven(&minter.secrets, uid)
+	secret, _ := minter.secrets.Secret(uid)
+
+	oven, _ := macaroon.NewOven(secret)
 
 	mac, _ := oven.MapCaveats(caveats).Cook()
 
 	token.Mac = mac
 
-	lsat := Token{Mac: mac, Preimage: preimage}
+	lsat := macaroon.Token{Mac: mac, Preimage: preimage}
 
-	tokenId := NewTokenID(uid, preimage.Hash())
+	tokenId := macaroon.NewTokenID(uid, preimage.Hash())
 
 	minter.secrets.StoreToken(tokenId, lsat)
 
 	return token, nil
 }
 
-func (minter *Minter) authToken(uid secrets.UserId, lsat *Token) error {
+func (minter *Minter) authToken(uid secrets.UserId, lsat *macaroon.Token) error {
 	tokens := minter.secrets.Tokens()
 
-	tokenId := NewTokenID(uid, lsat.Preimage.Hash())
+	tokenId := macaroon.NewTokenID(uid, lsat.Preimage.Hash())
 
-	rlsat, ok := tokens[tokenId]
+	rlsat, ok := (*tokens)[tokenId]
 
-	if !ok || rlsat != lsat {
+	if !ok || &rlsat != lsat {
 		return errors.New(TokenErr)
 	}
 
 	return minter.verifyMacaroon(uid, &lsat.Mac)
 }
 
-func (minter *Minter) verifyMacaroon(uid secrets.UserId, mac *Macaroon) error {
-	oven, _ := NewOven(&minter.secrets, uid)
-	oven.MapCaveats(mac.caveats)
+func (minter *Minter) verifyMacaroon(uid secrets.UserId, mac *macaroon.Macaroon) error {
+	secret, _ := minter.secrets.Secret(uid)
+	oven, _ := macaroon.NewOven(secret)
+	oven.MapCaveats(mac.Caveats())
 	nmac, _ := oven.Cook()
 	if mac.Signature() == nmac.Signature() {
-		return minter.service.VerifyCaveats(mac.service, mac.caveats...)
+		return minter.service.VerifyCaveats(mac.Service(), mac.Caveats()...)
 	} else {
 		return errors.New(UserErr) // Faudrait des erreurs
 	}

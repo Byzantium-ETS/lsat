@@ -1,4 +1,4 @@
-package auth
+package macaroon
 
 type Caveat struct {
 	Key   string

@@ -1,4 +1,4 @@
-package auth
+package macaroon
 
 import (
 	"crypto/hmac"
@@ -22,7 +22,11 @@ func (mac Macaroon) Caveats() []Caveat {
 }
 
 func (mac Macaroon) Signature() string {
-	return mac.Signature()
+	return mac.sig.String()
+}
+
+func (mac Macaroon) Service() Service {
+	return mac.service
 }
 
 // Bakes macaroons
@@ -32,7 +36,7 @@ type Oven struct {
 	caveats []Caveat
 }
 
-func NewOven(store *secrets.SecretStore, uid secrets.UserId) (Oven, error) {
+func NewOven(root secrets.Secret) (Oven, error) {
 	return Oven{}, nil
 }
 
@@ -53,7 +57,7 @@ func (oven Oven) Service(service Service) Oven {
 
 func (oven Oven) Cook() (Macaroon, error) {
 	// Je crois que c'est ca l'idee
-	mac := hmac.New(sha256.New, oven.root)
+	mac := hmac.New(sha256.New, oven.root[0:])
 
 	services, err := FmtServices(oven.service)
 
@@ -66,5 +70,8 @@ func (oven Oven) Cook() (Macaroon, error) {
 	for _, v := range oven.caveats {
 		mac = hmac.New(func() hash.Hash { return mac }, []byte(v.ToString()))
 	}
-	return Macaroon{caveats: oven.caveats, service: oven.service, sig: mac.Sum(nil)}, nil
+
+	signature, _ := lntypes.MakeHash(mac.Sum(nil))
+
+	return Macaroon{caveats: oven.caveats, service: oven.service, sig: signature}, nil
 }

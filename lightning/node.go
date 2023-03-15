@@ -28,7 +28,7 @@ type ChallengeFactory struct {
 }
 
 func (node *ChallengeFactory) Challenge(price int64) (lntypes.Preimage, PaymentRequest, error) {
-	return nil, PaymentRequest{}, nil
+	return lntypes.Preimage{}, PaymentRequest{}, nil
 }
 
 func (node *ChallengeFactory) Pay(invoice string) (lntypes.Preimage, error) {

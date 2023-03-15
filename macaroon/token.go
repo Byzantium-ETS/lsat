@@ -1,4 +1,4 @@
-package auth
+package macaroon
 
 import (
 	"lsat/lightning"
@@ -19,14 +19,14 @@ type Token struct {
 
 // Un Token partiel.
 // Le Token complet est créé quand l'invoice est payé quand l'utilisateur
-type preToken struct {
+type PreToken struct {
 	Mac     Macaroon
 	Invoice string // L'invoice qui sera payé par le client
 }
 
 // Créé un Token.
 // Utilisé par le client
-func (token preToken) Pay(node lightning.LightningNode) (Token, error) {
+func (token PreToken) Pay(node lightning.LightningNode) (Token, error) {
 	preimage, err := node.Pay(token.Invoice)
 	if err != nil {
 		return Token{Mac: token.Mac, Preimage: preimage}, nil
