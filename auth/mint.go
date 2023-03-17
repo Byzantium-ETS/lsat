@@ -39,6 +39,10 @@ func NewMinter(service ServiveManager, secrets SecretStore, challenger lightning
 	return Minter{service, secrets, challenger}
 }
 
+func (minter *Minter) SecretStore() SecretStore {
+	return minter.secrets
+}
+
 func totalPrice(services ...macaroon.Service) int {
 	total := 0
 	for _, s := range services {
@@ -50,7 +54,11 @@ func totalPrice(services ...macaroon.Service) int {
 func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (macaroon.PreToken, error) {
 	token := macaroon.PreToken{}
 
-	services, _ := minter.service.Services(context.Background(), service_names...)
+	services, err := minter.service.Services(context.Background(), service_names...)
+
+	if err != nil {
+		return token, err
+	}
 
 	preimage, payment, err := minter.challenger.Challenge(int64(totalPrice(services...)))
 
@@ -62,9 +70,13 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 
 	caveats, err := minter.service.Capabilities(context.Background(), services...)
 
-	secret, _ := minter.secrets.Secret(uid)
+	secret, err := minter.secrets.Secret(uid)
 
-	oven, _ := macaroon.NewOven(secret)
+	if err != nil {
+		return token, err
+	}
+
+	oven := macaroon.NewOven(secret)
 
 	mac, _ := oven.MapCaveats(caveats).Cook()
 
@@ -95,9 +107,8 @@ func (minter *Minter) authToken(uid secrets.UserId, lsat *macaroon.Token) error 
 
 func (minter *Minter) verifyMacaroon(uid secrets.UserId, mac *macaroon.Macaroon) error {
 	secret, _ := minter.secrets.Secret(uid)
-	oven, _ := macaroon.NewOven(secret)
-	oven.MapCaveats(mac.Caveats())
-	nmac, _ := oven.Cook()
+	oven := macaroon.NewOven(secret)
+	nmac, _ := oven.MapCaveats(mac.Caveats()).Cook()
 	if mac.Signature() == nmac.Signature() {
 		return minter.service.VerifyCaveats(mac.Service(), mac.Caveats()...)
 	} else {

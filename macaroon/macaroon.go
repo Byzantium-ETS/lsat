@@ -36,8 +36,8 @@ type Oven struct {
 	caveats []Caveat
 }
 
-func NewOven(root secrets.Secret) (Oven, error) {
-	return Oven{}, nil
+func NewOven(root secrets.Secret) Oven {
+	return Oven{}
 }
 
 func (oven Oven) Attenuate(caveat Caveat) Oven {
@@ -57,7 +57,7 @@ func (oven Oven) Service(service Service) Oven {
 
 func (oven Oven) Cook() (Macaroon, error) {
 	// Je crois que c'est ca l'idee
-	mac := hmac.New(sha256.New, oven.root[0:])
+	mac := hmac.New(sha256.New, oven.root[:])
 
 	services, err := FmtServices(oven.service)
 
@@ -67,11 +67,15 @@ func (oven Oven) Cook() (Macaroon, error) {
 		return Macaroon{}, err
 	}
 
-	for _, v := range oven.caveats {
-		mac = hmac.New(func() hash.Hash { return mac }, []byte(v.ToString()))
-	}
+	// for _, v := range oven.caveats {
+	// 	mac = hmac.New(func() hash.Hash { return mac }, []byte(v.ToString()))
+	// }
 
-	signature, _ := lntypes.MakeHash(mac.Sum(nil))
+	signature, err := lntypes.MakeHash(mac.Sum(nil))
+
+	if err != nil {
+		return Macaroon{}, err
+	}
 
 	return Macaroon{caveats: oven.caveats, service: oven.service, sig: signature}, nil
 }
