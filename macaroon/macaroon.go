@@ -3,7 +3,6 @@ package macaroon
 import (
 	"crypto/hmac"
 	"crypto/sha256"
-	"hash"
 	"lsat/secrets"
 
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -37,7 +36,9 @@ type Oven struct {
 }
 
 func NewOven(root secrets.Secret) Oven {
-	return Oven{}
+	oven := Oven{}
+	oven.root = root
+	return oven
 }
 
 func (oven Oven) Attenuate(caveat Caveat) Oven {
@@ -59,17 +60,20 @@ func (oven Oven) Cook() (Macaroon, error) {
 	// Je crois que c'est ca l'idee
 	mac := hmac.New(sha256.New, oven.root[:])
 
+	// fmt.Println(oven.root)
+
 	services, err := FmtServices(oven.service)
 
 	if err == nil {
-		mac = hmac.New(func() hash.Hash { return mac }, []byte(services))
+		mac.Write([]byte(services))
+		// mac = hmac.New(func() hash.Hash { return mac }, services)
 	} else {
 		return Macaroon{}, err
 	}
 
-	// for _, v := range oven.caveats {
-	// 	mac = hmac.New(func() hash.Hash { return mac }, []byte(v.ToString()))
-	// }
+	for _, v := range oven.caveats {
+		mac.Write([]byte(v.String()))
+	}
 
 	signature, err := lntypes.MakeHash(mac.Sum(nil))
 

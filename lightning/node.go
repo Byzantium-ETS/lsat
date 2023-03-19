@@ -7,10 +7,10 @@ import (
 )
 
 type PaymentRequest struct {
-	Add_index    uint64
-	Invoice      string
-	R_hash       lntypes.Hash
-	Payment_addr []uint8
+	AddIndex    uint64
+	Invoice     string
+	RHash       lntypes.Hash
+	PaymentAddr []uint8
 }
 
 type LightningNode interface {

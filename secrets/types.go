@@ -16,12 +16,14 @@ func NewUserId() UserId {
 }
 
 func NewSecret() Secret {
-	n := rand.Uint64()
 	arr := make([]byte, SecretSize)
-	binary.LittleEndian.PutUint64(arr, n)
+	for i := 0; i < 4; i++ {
+		n := rand.Uint64()
+		binary.LittleEndian.PutUint64(arr[i*8:], n)
+	}
 
 	var secret Secret
-	copy(arr[:], secret[:])
+	copy(secret[:32], arr[:32])
 
 	return secret
 }

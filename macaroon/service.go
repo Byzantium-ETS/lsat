@@ -33,11 +33,11 @@ func FmtServices(services ...Service) (string, error) {
 			return "", errors.New("missing service name!")
 		}
 
-		fmt.Fprintf(&s, service.Name+":"+string(service.Tier))
+		fmt.Fprintf(&s, fmt.Sprintf("%s:%s;", service.Name, string(rune(service.Tier))))
 	}
 	if s.Len() == 0 {
 		return "", errors.New("no services!")
 	} else {
-		return s.String(), nil
+		return s.String()[:s.Len()-1], nil
 	}
 }

@@ -34,12 +34,12 @@ func (node *TestChallenger) Challenge(price int64) (lntypes.Preimage, PaymentReq
 
 	rhash, _ := lntypes.MakeHash(uint2bytes(0))
 
-	payment_request := PaymentRequest{
-		R_hash:       rhash,
-		Invoice:      "",
-		Add_index:    0,
-		Payment_addr: make([]uint8, 0),
+	paymentRequest := PaymentRequest{
+		RHash:       rhash,
+		Invoice:     "",
+		AddIndex:    0,
+		PaymentAddr: make([]uint8, 0),
 	}
 
-	return preimage, payment_request, nil
+	return preimage, paymentRequest, nil
 }
