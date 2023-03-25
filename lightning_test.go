@@ -17,3 +17,11 @@ func TestPreimage(t *testing.T) {
 		t.Error("Two different challenges cannot have the same preimage")
 	}
 }
+
+func TestInvoice(t *testing.T) {
+	// TO-DO
+}
+
+func TestConnection(t *testing.T) {
+	// TO-DO
+}

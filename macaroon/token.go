@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	BaseVersion = 0
+	BaseVersion = iota
 )
 
 // Un Token complet
