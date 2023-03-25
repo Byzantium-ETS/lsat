@@ -30,6 +30,18 @@ func TestSecret(t *testing.T) {
 	}
 }
 
+func TestUid(t *testing.T) {
+	store := mock.NewTestStore()
+
+	userA := store.CreateUser()
+
+	userB := store.CreateUser()
+
+	if userA == userB {
+		t.Error("Two users cannot have the same id.")
+	}
+}
+
 func TestMacaroon(t *testing.T) {
 	store := mock.NewTestStore()
 

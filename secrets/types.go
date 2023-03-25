@@ -1,7 +1,6 @@
 package secrets
 
 import (
-	"encoding/binary"
 	"math/rand"
 )
 
@@ -16,14 +15,9 @@ func NewUserId() UserId {
 }
 
 func NewSecret() Secret {
-	arr := make([]byte, SecretSize)
-	for i := 0; i < 4; i++ {
-		n := rand.Uint64()
-		binary.LittleEndian.PutUint64(arr[i*8:], n)
-	}
-
 	var secret Secret
-	copy(secret[:32], arr[:32])
+
+	rand.Read(secret[:])
 
 	return secret
 }

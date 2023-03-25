@@ -26,7 +26,7 @@ type PreToken struct {
 
 // Créé un Token.
 // Utilisé par le client
-func (token PreToken) Pay(node lightning.LightningNode) (Token, error) {
+func (token PreToken) Pay(node lightning.Node) (Token, error) {
 	preimage, err := node.Pay(token.Invoice)
 	if err != nil {
 		return Token{Mac: token.Mac, Preimage: preimage}, nil

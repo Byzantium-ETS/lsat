@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	. "lsat/lightning"
+	"lsat/secrets"
 	"math/rand"
 
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -26,19 +27,20 @@ func NewTestChallenger() TestChallenger {
 }
 
 func (node *TestChallenger) Challenge(price int64) (lntypes.Preimage, PaymentRequest, error) {
-	preimage, err := lntypes.MakePreimage(uint2bytes(node.rand.Uint32()))
+	secret := secrets.NewSecret()
+	preimage, err := lntypes.MakePreimage(secret[:])
 
 	if err != nil {
 		return lntypes.Preimage{}, PaymentRequest{}, errors.New("failed to create preimage!")
 	}
 
-	rhash, _ := lntypes.MakeHash(uint2bytes(0))
+	rhash, _ := lntypes.MakeHash(nil)
 
 	paymentRequest := PaymentRequest{
 		RHash:       rhash,
 		Invoice:     "",
 		AddIndex:    0,
-		PaymentAddr: make([]uint8, 0),
+		PaymentAddr: nil,
 	}
 
 	return preimage, paymentRequest, nil
