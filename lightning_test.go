@@ -19,9 +19,9 @@ func TestPreimage(t *testing.T) {
 }
 
 func TestInvoice(t *testing.T) {
-	// TO-DO
+	t.Error("Pas encore implémenté!")
 }
 
 func TestConnection(t *testing.T) {
-	// TO-DO
+	t.Error("Pas encore implémenté!")
 }
