@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	dogService = "dogs"
-	catService = "cats"
+	DogService = "dogs"
+	CatService = "cats"
 
 	timeKey = "time"
 
@@ -20,10 +20,12 @@ const (
 type TestServiceManager struct {
 }
 
+var serviceManager TestServiceManager = TestServiceManager{}
+
 func listCaveats(service Service) []Caveat {
 	arr := make([]Caveat, 1)
 	switch service.Name {
-	case dogService, catService:
+	case DogService, CatService:
 		arr = append(arr, NewCaveat("time", time.Now().Add(time.Duration(1000)).Format(time.Layout)))
 	}
 	return arr
@@ -33,9 +35,9 @@ func (sm *TestServiceManager) Services(cx context.Context, names ...string) ([]S
 	list := make([]Service, len(names))
 	for _, name := range names {
 		switch name {
-		case "cat":
+		case CatService:
 			list = append(list, NewService("cats", 1000))
-		case "dog":
+		case DogService:
 			list = append(list, NewService("dogs", 2000))
 		default:
 			return []Service{}, errors.New("unkown service!")
@@ -69,10 +71,6 @@ func (sm *TestServiceManager) VerifyCaveats(service Service, caveats ...Caveat) 
 	}
 	return nil
 }
-
-var secretStore TestStore = NewTestStore()
-var challenger TestChallenger = NewTestChallenger()
-var serviceManager TestServiceManager = TestServiceManager{}
 
 func TestMinter() auth.Minter {
 	return auth.NewMinter(&serviceManager, &secretStore, &challenger)

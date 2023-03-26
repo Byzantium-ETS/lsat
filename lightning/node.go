@@ -1,6 +1,7 @@
 package lightning
 
 import (
+	"lsat/secrets"
 	"time"
 
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -13,28 +14,34 @@ type PaymentRequest struct {
 	PaymentAddr []uint8
 }
 
-type LightningNode interface {
-	Pay(string) (lntypes.Preimage, error)
-	CreateInvoice(int, time.Time, bool, string, lntypes.Preimage) (PaymentRequest, error)
-	// SubscribeInvoice(r_hash lntypes.Hash) error
+type Node interface {
+	Pay(invoice string) (lntypes.Preimage, error)                                                                                   // Pay a BOLT11 invoice.
+	CreateInvoice(valueMsat uint64, expiry time.Time, private bool, memo string, preimage lntypes.Preimage) (PaymentRequest, error) // Create a BOLT11 invoice.
 }
 
 type Challenger interface {
-	Challenge(int64) (lntypes.Preimage, PaymentRequest, error)
+	Challenge(price uint64) (lntypes.Preimage, PaymentRequest, error)
 }
 
 type ChallengeFactory struct {
-	node LightningNode
+	node Node
 }
 
-func (node *ChallengeFactory) Challenge(price int64) (lntypes.Preimage, PaymentRequest, error) {
-	return lntypes.Preimage{}, PaymentRequest{}, nil
+func NewChallenger(node Node) ChallengeFactory {
+	return ChallengeFactory{node}
 }
 
-func (node *ChallengeFactory) Pay(invoice string) (lntypes.Preimage, error) {
-	return lntypes.Preimage{}, nil
+func (challenger *ChallengeFactory) Challenge(price uint64) (lntypes.Preimage, PaymentRequest, error) {
+	secret := secrets.NewSecret()
+	preimage, _ := lntypes.MakePreimage(secret[:])
+	paymentRequest, err := challenger.node.CreateInvoice(price, time.Now().Add(time.Duration(time.Minute)), false, "", preimage)
+	return preimage, paymentRequest, err
 }
 
-func (node *ChallengeFactory) CreateInvoice(value_msat int, expiry time.Time, private bool, memo string, preimage lntypes.Preimage) (PaymentRequest, error) {
-	return PaymentRequest{}, nil
+func (challenger *ChallengeFactory) Pay(invoice string) (lntypes.Preimage, error) {
+	return challenger.node.Pay(invoice)
+}
+
+func (challenger *ChallengeFactory) CreateInvoice(valueMsat uint64, expiry time.Time, private bool, memo string, preimage lntypes.Preimage) (PaymentRequest, error) {
+	return challenger.node.CreateInvoice(valueMsat, expiry, private, memo, preimage)
 }

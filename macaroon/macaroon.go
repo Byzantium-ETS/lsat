@@ -60,13 +60,10 @@ func (oven Oven) Cook() (Macaroon, error) {
 	// Je crois que c'est ca l'idee
 	mac := hmac.New(sha256.New, oven.root[:])
 
-	// fmt.Println(oven.root)
-
 	services, err := FmtServices(oven.service)
 
 	if err == nil {
 		mac.Write([]byte(services))
-		// mac = hmac.New(func() hash.Hash { return mac }, services)
 	} else {
 		return Macaroon{}, err
 	}
