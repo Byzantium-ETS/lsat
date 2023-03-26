@@ -20,17 +20,21 @@ type Node interface {
 }
 
 type Challenger interface {
-	Challenge(int64) (lntypes.Preimage, PaymentRequest, error)
+	Challenge(price uint64) (lntypes.Preimage, PaymentRequest, error)
 }
 
 type ChallengeFactory struct {
 	node Node
 }
 
+func NewChallenger(node Node) ChallengeFactory {
+	return ChallengeFactory{node}
+}
+
 func (challenger *ChallengeFactory) Challenge(price uint64) (lntypes.Preimage, PaymentRequest, error) {
 	secret := secrets.NewSecret()
 	preimage, _ := lntypes.MakePreimage(secret[:])
-	paymentRequest, err := challenger.node.CreateInvoice(price, <-time.After(time.Minute), false, "", preimage)
+	paymentRequest, err := challenger.node.CreateInvoice(price, time.Now().Add(time.Duration(time.Minute)), false, "", preimage)
 	return preimage, paymentRequest, err
 }
 

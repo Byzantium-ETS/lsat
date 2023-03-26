@@ -43,10 +43,10 @@ func (minter *Minter) SecretStore() SecretStore {
 	return minter.secrets
 }
 
-func totalPrice(services ...macaroon.Service) int {
-	total := 0
+func totalPrice(services ...macaroon.Service) uint64 {
+	var total uint64 = 0
 	for _, s := range services {
-		total += int(s.Price)
+		total += s.Price
 	}
 	return total
 }
@@ -60,7 +60,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 		return token, err
 	}
 
-	preimage, payment, err := minter.challenger.Challenge(int64(totalPrice(services...)))
+	preimage, payment, err := minter.challenger.Challenge(totalPrice(services...))
 
 	if err != nil {
 		return token, err
@@ -91,7 +91,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 	return token, nil
 }
 
-func (minter *Minter) authToken(uid secrets.UserId, lsat *macaroon.Token) error {
+func (minter *Minter) AuthToken(uid secrets.UserId, lsat *macaroon.Token) error {
 	tokens := minter.secrets.Tokens()
 
 	tokenId := macaroon.NewTokenID(uid, lsat.Preimage.Hash())

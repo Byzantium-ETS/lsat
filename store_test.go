@@ -13,17 +13,15 @@ var caveats []macaroon.Caveat = []macaroon.Caveat{
 }
 
 func TestSecret(t *testing.T) {
-	store := mock.NewTestStore()
+	uid := secretStore.CreateUser()
 
-	uid := store.CreateUser()
-
-	asecret, err := store.Secret(uid)
+	asecret, err := secretStore.Secret(uid)
 
 	if err != nil {
 		t.Error("Secret not found in the Store.")
 	}
 
-	bsecret, _ := store.Secret(uid)
+	bsecret, _ := secretStore.Secret(uid)
 
 	if asecret != bsecret {
 		t.Error("Mismatch between the secret from the same user.")
@@ -43,11 +41,9 @@ func TestUid(t *testing.T) {
 }
 
 func TestMacaroon(t *testing.T) {
-	store := mock.NewTestStore()
+	uid := secretStore.CreateUser()
 
-	uid := store.CreateUser()
-
-	secret, _ := store.Secret(uid)
+	secret, _ := secretStore.Secret(uid)
 
 	oven := macaroon.NewOven(secret)
 
@@ -55,9 +51,9 @@ func TestMacaroon(t *testing.T) {
 
 	signaturea := mac.Signature()
 
-	uid = store.CreateUser()
+	uid = secretStore.CreateUser()
 
-	secret, _ = store.Secret(uid)
+	secret, _ = secretStore.Secret(uid)
 
 	oven = macaroon.NewOven(secret)
 
