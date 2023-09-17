@@ -1,17 +1,21 @@
 package secrets
 
 import (
-	"math/rand"
+	"crypto/rand"
 )
 
 const SecretSize = 32
 
 type Secret = [SecretSize]byte
 
-type UserId = uint32
+type UserId = [SecretSize]byte
 
-func NewUserId() UserId {
-	return rand.Uint32()
+func NewUserId() Secret {
+	var id UserId
+
+	rand.Read(id[:])
+
+	return id
 }
 
 func NewSecret() Secret {

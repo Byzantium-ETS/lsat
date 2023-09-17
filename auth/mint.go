@@ -66,7 +66,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 		return token, err
 	}
 
-	token.Invoice = payment.Invoice
+	token.Invoice = payment
 
 	caveats, err := minter.service.Capabilities(context.Background(), services...)
 

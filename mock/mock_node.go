@@ -1,9 +1,10 @@
 package mock
 
 import (
+	"context"
 	. "lsat/lightning"
-	"time"
 
+	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 )
 
@@ -14,10 +15,10 @@ var challenger ChallengeFactory = NewChallenger(&node)
 
 type TestNode struct{}
 
-func (Node *TestNode) Pay(invoice string) (lntypes.Preimage, error) {
+func (*TestNode) Pay(cx context.Context, invoice Invoice) (lntypes.Preimage, error) {
 	return lntypes.Preimage{}, nil
 }
 
-func (Node *TestNode) CreateInvoice(valueMsat uint64, expiry time.Time, private bool, memo string, preimage lntypes.Preimage) (PaymentRequest, error) {
-	return PaymentRequest{}, nil
+func (*TestNode) CreateInvoice(cx context.Context, pr lnrpc.Invoice) (lnrpc.AddInvoiceResponse, error) {
+	return lnrpc.AddInvoiceResponse{}, nil
 }

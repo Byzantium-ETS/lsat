@@ -11,6 +11,6 @@ func NewCaveat(Key string, Value string) Caveat {
 	return Caveat{Key, Value}
 }
 
-func (caveat Caveat) String() string {
+func (caveat *Caveat) String() string {
 	return fmt.Sprintf("%s=%s", caveat.Key, caveat.Value)
 }
