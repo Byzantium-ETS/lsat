@@ -13,13 +13,13 @@ type InvoiceBuilder = lnrpc.Invoice     /// A type used to build an Invoice.
 type Invoice = lnrpc.AddInvoiceResponse /// A BOLT11 invoice.
 
 type InvoiceHandler interface { // Je ne suis pas encore sur où est le bon endroit pour introduire les cxs.
-	Pay(context.Context, Invoice) (lntypes.Preimage, error)         // Pay a BOLT11 invoice.
+	Pay(context.Context, Invoice) (lntypes.Preimage, error)         // Pay a BOLT11 invoice. The server should not be required to pay.
 	CreateInvoice(context.Context, InvoiceBuilder) (Invoice, error) // Create a BOLT11 invoice.
 }
 
 // Issues challenges in the form of invoices.
 type Challenger interface {
-	Challenge(price uint64) (lntypes.Preimage, lnrpc.AddInvoiceResponse, error)
+	Challenge(price uint64) (ChallengeResult, error)
 }
 
 // A simple Challenger.
@@ -31,7 +31,12 @@ func NewChallenger(InvoiceHandler InvoiceHandler) ChallengeFactory {
 	return ChallengeFactory{InvoiceHandler}
 }
 
-func (challenger *ChallengeFactory) Challenge(price uint64) (lntypes.Preimage, Invoice, error) {
+type ChallengeResult struct {
+	Preimage lntypes.Preimage
+	Invoice  Invoice
+}
+
+func (challenger *ChallengeFactory) Challenge(price uint64) (ChallengeResult, error) {
 	secret := secrets.NewSecret()
 	preimage, _ := lntypes.MakePreimage(secret[:])
 	pr := InvoiceBuilder{
@@ -43,13 +48,5 @@ func (challenger *ChallengeFactory) Challenge(price uint64) (lntypes.Preimage, I
 		Private:   false,  // Not sure yet
 	}
 	invoice, err := challenger.InvoiceHandler.CreateInvoice(context.Background(), pr)
-	return preimage, invoice, err
-}
-
-func (challenger *ChallengeFactory) Pay(invoice Invoice) (lntypes.Preimage, error) {
-	return challenger.InvoiceHandler.Pay(context.Background(), invoice)
-}
-
-func (challenger *ChallengeFactory) CreateInvoice(pr InvoiceBuilder) (Invoice, error) {
-	return challenger.InvoiceHandler.CreateInvoice(context.Background(), pr)
+	return ChallengeResult{Preimage: preimage, Invoice: invoice}, err
 }

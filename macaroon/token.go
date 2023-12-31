@@ -2,6 +2,8 @@ package macaroon
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
 	"lsat/lightning"
 	"lsat/secrets"
 
@@ -17,21 +19,42 @@ const (
 //
 // It holds the macaroon and its secret.
 type Token struct {
-	Mac      Macaroon
-	Preimage lntypes.Preimage // Le secret de la transaction
+	Mac      Macaroon         // The macaroon.
+	Preimage lntypes.Preimage // The secret of the transaction.
 }
+
+func (token Token) String() string {
+	// Encode the Macaroon(s) as base64
+	macaroonBase64 := token.Mac.String()
+
+	// Encode the Preimage as hex
+	preimageHex := hex.EncodeToString(token.Preimage[:])
+
+	// Combine the encoded Macaroon(s) and encoded Preimage as <macaroon(s)>:<preimage>
+	encodedToken := fmt.Sprintf("%s:%s", macaroonBase64, preimageHex)
+
+	return encodedToken
+}
+
+const (
+	AuthSchemeErr = "The authentication scheme is not L402!"
+)
 
 // A transitive service token.
 //
 // It needs to be paid in order to become effective.
+//
+// This object is sent when the Macaroon is minted.
 type PreToken struct {
-	Mac     Macaroon
-	Invoice lnrpc.AddInvoiceResponse // L'invoice qui sera payé par le client
+	Mac     Macaroon                 // The macaroon.
+	Invoice lnrpc.AddInvoiceResponse // The invoice sent to the user.
 }
 
 // Create a Token.
 func (token PreToken) Pay(node lightning.InvoiceHandler) (Token, error) {
-	preimage, err := node.Pay(context.Background(), token.Invoice)
+	cx := context.Background()
+	cx = context.WithValue(cx, "macaroon", token.Mac) // Enrich the context with a macaroon
+	preimage, err := node.Pay(cx, token.Invoice)
 	if err != nil {
 		return Token{Mac: token.Mac, Preimage: preimage}, nil
 	} else {
@@ -39,13 +62,30 @@ func (token PreToken) Pay(node lightning.InvoiceHandler) (Token, error) {
 	}
 }
 
+func (token PreToken) String() (string, error) {
+	// Encode the Macaroon(s) as base64
+	macaroonBase64 := token.Mac.String()
+
+	// Encode the Invoice
+	invoice := token.Invoice.PaymentRequest
+
+	// Combine the encoded Macaroon(s) and encoded Preimage as <macaroon(s)>:<preimage>
+	encodedToken := fmt.Sprintf("%s:%s", macaroonBase64, invoice)
+
+	return encodedToken, nil
+}
+
 // A key used to identify macaroons in the database.
 type TokenID struct {
 	version Version
-	uid     secrets.UserId
-	hash    lntypes.Hash // Le hash du preimage de la transaction
+	uid     secrets.UserId // The id of the token owner
+	hash    lntypes.Hash   // The hash of the preimage of the transaction
 }
 
-func NewTokenID(uid secrets.UserId, hash lntypes.Hash) TokenID {
-	return TokenID{version: BaseVersion, uid: uid, hash: hash}
+func (token Token) Id() TokenID {
+	return TokenID{
+		version: BaseVersion,
+		uid:     token.Mac.Uid(),
+		hash:    lntypes.Hash(token.Preimage),
+	}
 }

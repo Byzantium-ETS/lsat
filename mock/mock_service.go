@@ -3,7 +3,6 @@ package mock
 import (
 	"context"
 	"errors"
-	"lsat/auth"
 	. "lsat/macaroon"
 	"time"
 )
@@ -17,22 +16,21 @@ const (
 	timeErr = "the macaroon is expired!"
 )
 
-type TestServiceManager struct {
-}
+type TestServiceManager struct{}
 
 var serviceManager TestServiceManager = TestServiceManager{}
 
 func listCaveats(service Service) []Caveat {
-	arr := make([]Caveat, 1)
+	arr := make([]Caveat, 0, 1)
 	switch service.Name {
 	case DogService, CatService:
-		arr = append(arr, NewCaveat("time", time.Now().Add(time.Duration(1000)).Format(time.Layout)))
+		arr = append(arr, NewCaveat("time", time.Now().Add(time.Duration(time.Hour)).Format(time.Layout)))
 	}
 	return arr
 }
 
 func (sm *TestServiceManager) Services(cx context.Context, names ...string) ([]Service, error) {
-	list := make([]Service, len(names))
+	list := make([]Service, 0, len(names))
 	for _, name := range names {
 		switch name {
 		case CatService:
@@ -47,14 +45,14 @@ func (sm *TestServiceManager) Services(cx context.Context, names ...string) ([]S
 }
 
 func (sm *TestServiceManager) Capabilities(cx context.Context, services ...Service) ([]Caveat, error) {
-	arr := make([]Caveat, 10)
+	arr := make([]Caveat, 0, len(services))
 	for _, service := range services {
 		arr = append(arr, listCaveats(service)...)
 	}
 	return arr, nil
 }
 
-func (sm *TestServiceManager) VerifyCaveats(service Service, caveats ...Caveat) error {
+func (sm *TestServiceManager) VerifyCaveats(caveats ...Caveat) error {
 	for _, caveat := range caveats {
 		switch caveat.Key {
 		case timeKey:
@@ -70,8 +68,4 @@ func (sm *TestServiceManager) VerifyCaveats(service Service, caveats ...Caveat) 
 		}
 	}
 	return nil
-}
-
-func TestMinter() auth.Minter {
-	return auth.NewMinter(&serviceManager, &secretStore, &challenger)
 }

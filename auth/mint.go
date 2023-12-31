@@ -9,20 +9,20 @@ import (
 )
 
 const (
-	PermErr  = "The macaroon lacks permission!"
-	TokenErr = "The token could not be found!"
-	UserErr  = "The macaroon is not from this user!"
+	PermErr    = "The macaroon lacks permission!"
+	TokenErr   = "The token could not be found!"
+	SigErr     = "The macaroon has an invalid signature!"
+	PaymentErr = "The preimage provided is invalid!"
 )
 
 // Assure qu'un macaroon ait accès aux services
 type ServiveManager interface {
 	Services(cx context.Context, names ...string) ([]macaroon.Service, error)
 	Capabilities(cx context.Context, services ...macaroon.Service) ([]macaroon.Caveat, error) // The capabilities of the service
-	VerifyCaveats(cx macaroon.Service, caveats ...macaroon.Caveat) error                      // Retourne une erreur si les caveats ne sont plus valide, ca veut generalement dire que le macaroon est expire
+	VerifyCaveats(caveats ...macaroon.Caveat) error                                           // Retourne une erreur si les caveats ne sont plus valide, ca veut generalement dire que le macaroon est expire
 }
 
 type SecretStore interface {
-	// NewSecret() (Secret, error)
 	Secret(uid secrets.UserId) (secrets.Secret, error)          // S'il n'y a pas de RootKey pour l'utilisateur, il sera créé
 	StoreToken(id macaroon.TokenID, token macaroon.Token) error // Les tokens peuvent être conservé pour des raisons d'archivage
 	Tokens() *map[macaroon.TokenID]macaroon.Token               // Tous les tokens d'un utilisateur
@@ -60,13 +60,13 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 		return token, err
 	}
 
-	preimage, payment, err := minter.challenger.Challenge(totalPrice(services...))
+	result, err := minter.challenger.Challenge(totalPrice(services...))
 
 	if err != nil {
 		return token, err
 	}
 
-	token.Invoice = payment
+	token.Invoice = result.Invoice
 
 	caveats, err := minter.service.Capabilities(context.Background(), services...)
 
@@ -78,40 +78,44 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 
 	oven := macaroon.NewOven(secret)
 
-	mac, _ := oven.MapCaveats(caveats).Cook()
+	// So far we'll only take into consideration the first service.
+	mac, err := oven.UserId(uid).Caveats(caveats...).Service(services...).Cook()
+
+	if err != nil {
+		return token, err
+	}
 
 	token.Mac = mac
 
-	lsat := macaroon.Token{Mac: mac, Preimage: preimage}
+	lsat := macaroon.Token{Mac: mac, Preimage: result.Preimage}
 
-	tokenId := macaroon.NewTokenID(uid, preimage.Hash())
+	tokenId := lsat.Id()
 
+	// We store the token in an archive.
 	minter.secrets.StoreToken(tokenId, lsat)
 
 	return token, nil
 }
 
-func (minter *Minter) AuthToken(uid secrets.UserId, lsat *macaroon.Token) error {
-	tokens := minter.secrets.Tokens()
+func (minter *Minter) AuthToken(lsat *macaroon.Token) error {
+	tokens := *minter.secrets.Tokens()
 
-	tokenId := macaroon.NewTokenID(uid, lsat.Preimage.Hash())
+	_, ok := tokens[lsat.Id()]
 
-	rlsat, ok := (*tokens)[tokenId]
-
-	if !ok || &rlsat != lsat {
-		return errors.New(TokenErr)
+	if !ok {
+		return errors.New(PaymentErr)
 	}
 
-	return minter.verifyMacaroon(uid, &lsat.Mac)
+	return minter.AuthMacaroon(&lsat.Mac)
 }
 
-func (minter *Minter) verifyMacaroon(uid secrets.UserId, mac *macaroon.Macaroon) error {
-	secret, _ := minter.secrets.Secret(uid)
+func (minter *Minter) AuthMacaroon(mac *macaroon.Macaroon) error {
+	secret, _ := minter.secrets.Secret(mac.Uid())
 	oven := macaroon.NewOven(secret)
-	nmac, _ := oven.MapCaveats(mac.Caveats()).Cook()
+	nmac, _ := oven.Caveats(mac.Caveats()...).Cook()
 	if mac.Signature() == nmac.Signature() {
-		return minter.service.VerifyCaveats(mac.Service(), mac.Caveats()...)
+		return minter.service.VerifyCaveats(mac.Caveats()...)
 	} else {
-		return errors.New(UserErr) // Faudrait des erreurs
+		return errors.New(SigErr) // Faudrait des erreurs
 	}
 }

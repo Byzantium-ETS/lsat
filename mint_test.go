@@ -2,36 +2,34 @@ package main
 
 import (
 	"lsat/auth"
-	"lsat/lightning"
 	"lsat/mock"
 	"testing"
 )
 
 var secretStore mock.TestStore = mock.NewTestStore()
-var node mock.TestNode = mock.TestNode{}
 var serviceManager mock.TestServiceManager = mock.TestServiceManager{}
-var challenger lightning.ChallengeFactory = lightning.NewChallenger(&node)
 
-func TestLsat(t *testing.T) {
+// I should use LndClient for testing here.
+// var challenger mock.TestChallenger = mock.TestChallenger{}
+
+func TestAuthMacaroon(t *testing.T) {
 	uid := secretStore.CreateUser()
 
-	minter := auth.NewMinter(&serviceManager, &secretStore, &challenger)
+	minter := auth.NewMinter(&serviceManager, &secretStore, &mock.TestChallenger{})
 
-	t.Log(uid)
+	t.Log("user_id: ", uid)
 
 	preToken, err := minter.MintToken(uid, mock.DogService)
 
-	if err != nil {
-		t.Error(err)
-	}
+	mac := preToken.Mac.String()
 
-	token, err := preToken.Pay(&node)
+	t.Log("macaroon: ", mac)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	t.Log(token.Mac)
+	err = minter.AuthMacaroon(&preToken.Mac)
 
 	if err != nil {
 		t.Error(err)

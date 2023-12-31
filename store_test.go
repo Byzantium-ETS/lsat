@@ -47,7 +47,7 @@ func TestMacaroon(t *testing.T) {
 
 	oven := macaroon.NewOven(secret)
 
-	mac, _ := oven.MapCaveats(caveats).Service(service).Cook()
+	mac, _ := oven.Caveats(caveats...).Service(service).Cook()
 
 	signaturea := mac.Signature()
 
@@ -57,7 +57,7 @@ func TestMacaroon(t *testing.T) {
 
 	oven = macaroon.NewOven(secret)
 
-	mac, _ = oven.MapCaveats(caveats).Service(service).Cook()
+	mac, _ = oven.Caveats(caveats...).Service(service).Cook()
 
 	signatureb := mac.Signature()
 
