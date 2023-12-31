@@ -20,6 +20,8 @@ func TestMacaroonEncoding(t *testing.T) {
 		return
 	}
 
+	t.Log(mac.Caveats())
+
 	encodedMac := mac.String()
 
 	t.Log(encodedMac)

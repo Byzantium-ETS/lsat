@@ -1,4 +1,4 @@
-package lightning
+package challenge
 
 import (
 	"context"
@@ -33,7 +33,7 @@ func NewLndClient(conn *grpc.ClientConn) LndClient {
 	}
 }
 
-func (lnd *LndClient) Pay(cx context.Context, invoice Invoice) (lntypes.Preimage, error) {
+func (lnd *LndClient) SendPayment(cx context.Context, invoice PaymentRequest) (lntypes.Preimage, error) {
 	encoded_pr := lnrpc.SendRequest{PaymentRequest: invoice.GetPaymentRequest()}
 
 	response, err := lnd.client.SendPaymentSync(cx, &encoded_pr)
@@ -42,12 +42,16 @@ func (lnd *LndClient) Pay(cx context.Context, invoice Invoice) (lntypes.Preimage
 		return lntypes.Preimage{}, err
 	}
 
-	pre_image, _ := lntypes.MakePreimage(response.PaymentPreimage)
+	pre_image, err := lntypes.MakePreimage(response.PaymentPreimage)
+
+	if err != nil {
+		return lntypes.Preimage{}, err
+	}
 
 	return pre_image, nil
 }
 
-func (lnd *LndClient) CreateInvoice(cx context.Context, invoice InvoiceBuilder) (Invoice, error) {
-	invoice_resp, err := lnd.client.AddInvoice(cx, &invoice, grpc.EmptyCallOption{})
-	return *invoice_resp, err
+func (lnd *LndClient) CreateInvoice(cx context.Context, invoice InvoiceBuilder) (PaymentRequest, error) {
+	paymentRequest, err := lnd.client.AddInvoice(cx, &invoice, grpc.EmptyCallOption{})
+	return *paymentRequest, err
 }

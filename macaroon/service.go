@@ -10,8 +10,6 @@ const (
 	BaseTier = 0
 )
 
-// Un service est un caveat particulier
-// C'est le premier caveat appliqué
 type Service struct {
 	Name  string
 	Tier  Tier

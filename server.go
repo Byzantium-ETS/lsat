@@ -1,4 +1,4 @@
-package proxy
+package main
 
 import (
 	"fmt"
@@ -8,45 +8,49 @@ import (
 	"lsat/secrets"
 	"net/http"
 	"strings"
+
+	"github.com/lightningnetwork/lnd/lntypes"
 )
 
 const (
 	service_name = "dogs"
 )
 
-var serviceManager = mock.TestServiceManager{}
-var secretStore = mock.NewTestStore()
-var challenger = mock.TestChallenger{}
-
 type Handler struct {
 	*auth.Minter
 }
 
 func HttpServer() {
+	servicesManager := mock.TestServiceManager{}
+	secretStore := mock.NewTestStore()
+	challenger := mock.TestChallenger{}
+
 	// Initialize your Server instance
-	minter := auth.NewMinter(&serviceManager, &secretStore, &challenger)
+	minter := auth.NewMinter(&servicesManager, &secretStore, &challenger)
 
 	// Create a Handler with access to the Server
 	handle := &Handler{Minter: &minter}
 
 	fmt.Println("Server launched!")
-	http.HandleFunc("/", handle.handleRequest) // Retourné dans le cas où la platforme reçoit un Token invalide
-	http.ListenAndServe(":8080", nil)          // Ca devrait etre lié à la platforme?
+	http.HandleFunc("/", handle.handleRequest)        // Retourné dans le cas où la platforme reçoit un Token invalide
+	err := http.ListenAndServe("localhost:8080", nil) // Ca devrait etre lié à la platforme?
+
+	fmt.Println(err)
 }
 
 func (h *Handler) handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Extract the Authorization header
 	authHeader := r.Header.Get("Authorization")
 
-	// Create a new UserId
-	uid := secrets.NewUserId()
-
 	// Check if Authorization header is present
 	// Parse the Authorization header
 	parts := strings.Split(authHeader, " ")
+
 	// Extract the Macaroon and preimage from the Authorization header
-	credentials := strings.Split(parts[1], ":")
-	if authHeader == "" || len(parts) != 2 || parts[0] != "L402" || len(credentials) != 2 {
+	if len(parts) != 2 || parts[0] != "L402" {
+		// Create a new UserId
+		uid := secrets.NewUserId()
+
 		// Invalid Authorization header format, respond with 402 Payment Required and WWW-Authenticate header
 		pretoken, err := h.Minter.MintToken(uid, service_name)
 
@@ -68,29 +72,26 @@ func (h *Handler) handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	preimage := credentials[1]
+	credentials := strings.Split(parts[1], ":")
 
-	encodeding := credentials[0] // Encode Macaroon
-	macaroon, err := macaroon.Decode(encodeding)
+	Macaroon, _ := macaroon.Decode(credentials[0])
+	Preimage, _ := lntypes.MakePreimageFromStr(credentials[1])
 
-	if err != nil {
-		fmt.Println(err)
-		return
+	token := macaroon.Token{
+		Mac:      Macaroon,
+		Preimage: Preimage,
 	}
-
-	// token = macaroon.Token{}
 
 	// Process the request with the extracted Macaroon and preimage
 	// Your logic for handling the request goes here...
-	// err = h.Minter.VerifyMacaroon(&macaroon)
+	err := h.Minter.AuthToken(&token)
 
 	if err == nil {
 		// Respond with success (for demonstration purposes)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Request authorized with Macaroon: %s and Preimage: %s", macaroon, preimage)
+		fmt.Fprintf(w, "Request authorized with Macaroon: %s and Preimage: %s", Macaroon, Preimage)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "Authentification failed! %s", err)
 	}
-
 }

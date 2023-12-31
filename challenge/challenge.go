@@ -1,4 +1,4 @@
-package lightning
+package challenge
 
 import (
 	"context"
@@ -9,12 +9,12 @@ import (
 	"github.com/lightningnetwork/lnd/lntypes"
 )
 
-type InvoiceBuilder = lnrpc.Invoice     /// A type used to build an Invoice.
-type Invoice = lnrpc.AddInvoiceResponse /// A BOLT11 invoice.
+type InvoiceBuilder = lnrpc.Invoice            /// A type used to build an Invoice.
+type PaymentRequest = lnrpc.AddInvoiceResponse /// A BOLT11 invoice.
 
 type InvoiceHandler interface { // Je ne suis pas encore sur où est le bon endroit pour introduire les cxs.
-	Pay(context.Context, Invoice) (lntypes.Preimage, error)         // Pay a BOLT11 invoice. The server should not be required to pay.
-	CreateInvoice(context.Context, InvoiceBuilder) (Invoice, error) // Create a BOLT11 invoice.
+	SendPayment(context.Context, PaymentRequest) (lntypes.Preimage, error) // Pay a BOLT11 invoice. The server should not be required to pay.
+	CreateInvoice(context.Context, InvoiceBuilder) (PaymentRequest, error) // Create a BOLT11 invoice.
 }
 
 // Issues challenges in the form of invoices.
@@ -33,13 +33,13 @@ func NewChallenger(InvoiceHandler InvoiceHandler) ChallengeFactory {
 
 type ChallengeResult struct {
 	Preimage lntypes.Preimage
-	Invoice  Invoice
+	Invoice  PaymentRequest
 }
 
 func (challenger *ChallengeFactory) Challenge(price uint64) (ChallengeResult, error) {
 	secret := secrets.NewSecret()
 	preimage, _ := lntypes.MakePreimage(secret[:])
-	pr := InvoiceBuilder{
+	paymentRequest := InvoiceBuilder{
 		RPreimage: preimage[:],
 		Value:     int64(price),
 		Expiry:    int64(time.Hour), // The time could change in the future
@@ -47,6 +47,6 @@ func (challenger *ChallengeFactory) Challenge(price uint64) (ChallengeResult, er
 		Memo:      "L402", // Idealy we would have the service name
 		Private:   false,  // Not sure yet
 	}
-	invoice, err := challenger.InvoiceHandler.CreateInvoice(context.Background(), pr)
+	invoice, err := challenger.InvoiceHandler.CreateInvoice(context.Background(), paymentRequest)
 	return ChallengeResult{Preimage: preimage, Invoice: invoice}, err
 }

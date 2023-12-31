@@ -1,7 +1,7 @@
 package mock
 
 import (
-	. "lsat/lightning"
+	. "lsat/challenge"
 	"lsat/secrets"
 
 	"github.com/lightningnetwork/lnd/lnrpc"

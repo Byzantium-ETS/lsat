@@ -1,58 +1,43 @@
 package macaroon
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"lsat/secrets"
 
 	"github.com/lightningnetwork/lnd/lntypes"
 )
 
+// Version is an alias for the Macaroon version.
 type Version = int8
 
+// Macaroon struct represents an LSAT (Lightning Service Authentication Token) macaroon.
 type Macaroon struct {
 	uid     secrets.UserId
 	caveats []Caveat
 	sig     lntypes.Hash
 }
 
-type macaroonJSON struct {
-	Uid     string   `json:"user_id"`
-	Caveats []Caveat `json:"caveats"`
-	Sig     string   `json:"signature"`
-}
-
-func (mac Macaroon) Uid() secrets.UserId {
+// Uid returns the user ID associated with the macaroon.
+func (mac *Macaroon) Uid() secrets.UserId {
 	return mac.uid
 }
 
-func (mac Macaroon) Caveats() []Caveat {
+// Caveats returns the list of caveats associated with the macaroon.
+func (mac *Macaroon) Caveats() []Caveat {
 	return mac.caveats
 }
 
-func (mac Macaroon) Signature() string {
+// Signature returns the signature of the macaroon.
+func (mac *Macaroon) Signature() string {
 	return mac.sig.String()
 }
 
-func (mac Macaroon) toJSON() macaroonJSON {
-	return macaroonJSON{
-		Uid:     mac.uid.String(),
-		Caveats: mac.caveats,
-		Sig:     mac.Signature(),
-	}
-}
-
+// String returns the string representation of the macaroon.
 func (mac Macaroon) String() string {
 	// Marshal the Macaroon struct to JSON
-	jsonData, err := json.Marshal(mac.toJSON())
-
-	if err != nil {
-		return fmt.Sprint(err)
-	}
+	jsonData, _ := json.Marshal(mac.toJSON())
 
 	// Encode the JSON data to base64
 	base64String := base64.StdEncoding.EncodeToString(jsonData)
@@ -60,6 +45,23 @@ func (mac Macaroon) String() string {
 	return base64String
 }
 
+// macaroonJSON struct is used for JSON encoding/decoding of macaroon.
+type macaroonJSON struct {
+	Uid     string   `json:"user_id"`
+	Caveats []Caveat `json:"caveats"`
+	Sig     string   `json:"signature"`
+}
+
+// toJSON converts Macaroon to macaroonJSON.
+func (mac *Macaroon) toJSON() macaroonJSON {
+	return macaroonJSON{
+		Uid:     mac.uid.String(),
+		Caveats: mac.caveats,
+		Sig:     mac.Signature(),
+	}
+}
+
+// decodeBase64 decodes a base64-encoded string.
 func decodeBase64(encodedString string) ([]byte, error) {
 	decoded, err := base64.StdEncoding.DecodeString(encodedString)
 	if err != nil {
@@ -68,6 +70,7 @@ func decodeBase64(encodedString string) ([]byte, error) {
 	return decoded, nil
 }
 
+// Decode decodes a base64-encoded macaroon string into a Macaroon struct.
 func Decode(encodedString string) (Macaroon, error) {
 	// Decode the base64 string
 	decoded, err := decodeBase64(encodedString)
@@ -75,78 +78,28 @@ func Decode(encodedString string) (Macaroon, error) {
 		return Macaroon{}, err
 	}
 
-	// Unmarshal the decoded data into the Macaroon type
+	// Unmarshal the decoded data into the macaroonJSON type
 	var macJSON macaroonJSON
 	err = json.Unmarshal(decoded, &macJSON)
 
 	if err != nil {
-		fmt.Println(macJSON.Caveats)
 		return Macaroon{}, err
 	}
 
-	uid, _ := hex.DecodeString(macJSON.Sig)
+	// Convert the hex-encoded UID and signature to their respective types
+	uid, _ := hex.DecodeString(macJSON.Uid)
 	sig, _ := hex.DecodeString(macJSON.Sig)
 
-	sig_hash, _ := lntypes.MakeHash(sig)
-	uid_hash, _ := secrets.MakeUserId(uid)
+	// Create lntypes.Hash and secrets.UserId from the decoded values
+	sigHash, _ := lntypes.MakeHash(sig)
+	uidHash, _ := secrets.MakeUserId(uid)
 
+	// Create a Macaroon struct
 	mac := Macaroon{
-		uid:     uid_hash,
+		uid:     uidHash,
 		caveats: macJSON.Caveats,
-		sig:     sig_hash,
+		sig:     sigHash,
 	}
 
 	return mac, nil
-}
-
-// Bakes macaroons
-type Oven struct {
-	uid     secrets.UserId
-	root    secrets.Secret
-	caveats []Caveat
-}
-
-func NewOven(root secrets.Secret) Oven {
-	oven := Oven{}
-	oven.root = root
-	return oven
-}
-
-func (oven Oven) UserId(uid secrets.UserId) Oven {
-	oven.uid = uid
-	return oven
-}
-
-func (oven Oven) Attenuate(caveat Caveat) Oven {
-	oven.caveats = append(oven.caveats, caveat)
-	return oven
-}
-
-func (oven Oven) Caveats(caveats ...Caveat) Oven {
-	oven.caveats = append(oven.caveats, caveats...)
-	return oven
-}
-
-func (oven Oven) Service(services ...Service) Oven {
-	for _, service := range services {
-		oven.caveats = append([]Caveat{service.Caveat()}, oven.caveats...)
-	}
-	return oven
-}
-
-func (oven Oven) Cook() (Macaroon, error) {
-	// Je crois que c'est ca l'idee
-	mac := hmac.New(sha256.New, oven.root[:])
-
-	for _, caveat := range oven.caveats {
-		mac.Write([]byte(caveat.String()))
-	}
-
-	signature, err := lntypes.MakeHash(mac.Sum(nil))
-
-	if err != nil {
-		return Macaroon{}, err
-	}
-
-	return Macaroon{uid: oven.uid, caveats: oven.caveats, sig: signature}, nil
 }

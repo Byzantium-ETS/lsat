@@ -3,7 +3,8 @@ package auth
 import (
 	"context"
 	"errors"
-	"lsat/lightning"
+	"fmt"
+	"lsat/challenge"
 	"lsat/macaroon"
 	"lsat/secrets"
 )
@@ -32,10 +33,10 @@ type SecretStore interface {
 type Minter struct {
 	service    ServiveManager       // Une abstraction des services offert par une application
 	secrets    SecretStore          // La source des secrets des lsats qui seront créé
-	challenger lightning.Challenger // Crée les challenges sous la forme d'invoices
+	challenger challenge.Challenger // Crée les challenges sous la forme d'invoices
 }
 
-func NewMinter(service ServiveManager, secrets SecretStore, challenger lightning.Challenger) Minter {
+func NewMinter(service ServiveManager, secrets SecretStore, challenger challenge.Challenger) Minter {
 	return Minter{service, secrets, challenger}
 }
 
@@ -73,12 +74,11 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 	secret, err := minter.secrets.Secret(uid)
 
 	if err != nil {
-		return token, err
+		fmt.Println(err)
 	}
 
 	oven := macaroon.NewOven(secret)
 
-	// So far we'll only take into consideration the first service.
 	mac, err := oven.UserId(uid).Caveats(caveats...).Service(services...).Cook()
 
 	if err != nil {

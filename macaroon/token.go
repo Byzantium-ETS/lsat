@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"lsat/lightning"
+	"lsat/challenge"
 	"lsat/secrets"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -51,10 +51,10 @@ type PreToken struct {
 }
 
 // Create a Token.
-func (token PreToken) Pay(node lightning.InvoiceHandler) (Token, error) {
+func (token PreToken) Pay(node challenge.InvoiceHandler) (Token, error) {
 	cx := context.Background()
 	cx = context.WithValue(cx, "macaroon", token.Mac) // Enrich the context with a macaroon
-	preimage, err := node.Pay(cx, token.Invoice)
+	preimage, err := node.SendPayment(cx, token.Invoice)
 	if err != nil {
 		return Token{Mac: token.Mac, Preimage: preimage}, nil
 	} else {

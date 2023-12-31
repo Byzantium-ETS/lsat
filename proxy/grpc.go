@@ -2,13 +2,13 @@ package proxy
 
 import (
 	"log"
-	"lsat/lightning"
+	"lsat/challenge"
 
 	"google.golang.org/grpc"
 	// Import any other necessary packages here
 )
 
-func InitGrpcClient(address string) lightning.LndClient {
+func InitGrpcClient(address string) challenge.LndClient {
 	// Set up a connection to the gRPC server.
 	// Replace "localhost:50051" with the actual server address and port.
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -18,7 +18,7 @@ func InitGrpcClient(address string) lightning.LndClient {
 	defer conn.Close()
 
 	// Create a gRPC client using the connection
-	client := lightning.NewLndClient(conn)
+	client := challenge.NewLndClient(conn)
 
 	return client
 }
