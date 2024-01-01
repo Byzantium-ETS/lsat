@@ -5,35 +5,22 @@ import (
 	"lsat/secrets"
 	"time"
 
-	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 )
 
-type InvoiceBuilder = lnrpc.Invoice            /// A type used to build an Invoice.
-type PaymentRequest = lnrpc.AddInvoiceResponse /// A BOLT11 invoice.
-
-type InvoiceHandler interface { // Je ne suis pas encore sur où est le bon endroit pour introduire les cxs.
-	SendPayment(context.Context, PaymentRequest) (lntypes.Preimage, error) // Pay a BOLT11 invoice. The server should not be required to pay.
-	CreateInvoice(context.Context, InvoiceBuilder) (PaymentRequest, error) // Create a BOLT11 invoice.
-}
-
 // Issues challenges in the form of invoices.
 type Challenger interface {
-	Challenge(price uint64) (ChallengeResult, error)
+	Challenge(price uint64) (ChallengeResult, error) // Create a challenge.
 }
 
 // A simple Challenger.
 type ChallengeFactory struct {
-	InvoiceHandler InvoiceHandler
-}
-
-func NewChallenger(InvoiceHandler InvoiceHandler) ChallengeFactory {
-	return ChallengeFactory{InvoiceHandler}
+	LightningNode
 }
 
 type ChallengeResult struct {
-	Preimage lntypes.Preimage
-	Invoice  PaymentRequest
+	lntypes.Preimage
+	PaymentRequest
 }
 
 func (challenger *ChallengeFactory) Challenge(price uint64) (ChallengeResult, error) {
@@ -47,6 +34,6 @@ func (challenger *ChallengeFactory) Challenge(price uint64) (ChallengeResult, er
 		Memo:      "L402", // Idealy we would have the service name
 		Private:   false,  // Not sure yet
 	}
-	invoice, err := challenger.InvoiceHandler.CreateInvoice(context.Background(), paymentRequest)
-	return ChallengeResult{Preimage: preimage, Invoice: invoice}, err
+	invoice, err := challenger.LightningNode.CreateInvoice(context.Background(), paymentRequest)
+	return ChallengeResult{Preimage: preimage, PaymentRequest: invoice}, err
 }

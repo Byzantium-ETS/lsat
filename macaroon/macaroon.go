@@ -24,6 +24,11 @@ func (mac *Macaroon) Uid() secrets.UserId {
 	return mac.uid
 }
 
+// Services extracts service names from the Macaroon's caveats.
+func (mac *Macaroon) Services() ServiceIterator {
+	return ServiceIterator{caveats: mac.caveats}
+}
+
 // Caveats returns the list of caveats associated with the macaroon.
 func (mac *Macaroon) Caveats() []Caveat {
 	return mac.caveats
@@ -37,7 +42,7 @@ func (mac *Macaroon) Signature() string {
 // String returns the string representation of the macaroon.
 func (mac Macaroon) String() string {
 	// Marshal the Macaroon struct to JSON
-	jsonData, _ := json.Marshal(mac.toJSON())
+	jsonData, _ := json.Marshal(mac.ToJSON())
 
 	// Encode the JSON data to base64
 	base64String := base64.StdEncoding.EncodeToString(jsonData)
@@ -52,8 +57,8 @@ type macaroonJSON struct {
 	Sig     string   `json:"signature"`
 }
 
-// toJSON converts Macaroon to macaroonJSON.
-func (mac *Macaroon) toJSON() macaroonJSON {
+// ToJSON converts Macaroon to macaroonJSON.
+func (mac *Macaroon) ToJSON() macaroonJSON {
 	return macaroonJSON{
 		Uid:     mac.uid.String(),
 		Caveats: mac.caveats,

@@ -21,7 +21,7 @@ func TestAuthMacaroon(t *testing.T) {
 
 	preToken, err := minter.MintToken(uid, mock.DogService)
 
-	mac := preToken.Mac.String()
+	mac := preToken.Macaroon.String()
 
 	t.Log("macaroon: ", mac)
 
@@ -29,7 +29,7 @@ func TestAuthMacaroon(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = minter.AuthMacaroon(&preToken.Mac)
+	err = minter.AuthMacaroon(&preToken.Macaroon)
 
 	if err != nil {
 		t.Error(err)

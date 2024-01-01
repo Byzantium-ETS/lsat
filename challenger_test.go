@@ -5,14 +5,14 @@ import (
 	"testing"
 )
 
-const DefaultPrice uint64 = 1000
+const defaultPrice uint64 = 1000
 
 func TestPreimage(t *testing.T) {
 	// Should be replaced by LndClient
 	var challenger = mock.TestChallenger{}
 
-	resultA, _ := challenger.Challenge(DefaultPrice)
-	resultB, _ := challenger.Challenge(DefaultPrice)
+	resultA, _ := challenger.Challenge(defaultPrice)
+	resultB, _ := challenger.Challenge(defaultPrice)
 
 	t.Log(resultA.Preimage)
 	t.Log(resultB.Preimage)

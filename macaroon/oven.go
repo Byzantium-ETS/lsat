@@ -23,25 +23,24 @@ func NewOven(root secrets.Secret) Oven {
 }
 
 // UserId sets the user ID in the Oven.
-func (oven Oven) UserId(uid secrets.UserId) Oven {
+func (oven Oven) WithUserId(uid secrets.UserId) Oven {
 	oven.uid = uid
 	return oven
 }
 
 // Attenuate adds a single caveat to the Oven.
-func (oven Oven) Attenuate(caveat Caveat) Oven {
+func (oven *Oven) Attenuate(caveat Caveat) {
 	oven.caveats = append(oven.caveats, caveat)
-	return oven
 }
 
-// Caveats adds multiple caveats to the Oven.
-func (oven Oven) Caveats(caveats ...Caveat) Oven {
+// Adds multiple caveats to the Oven.
+func (oven Oven) WithCaveats(caveats ...Caveat) Oven {
 	oven.caveats = append(oven.caveats, caveats...)
 	return oven
 }
 
-// Service adds caveats for the specified services to the Oven.
-func (oven Oven) Service(services ...Service) Oven {
+// Adds caveats for the specified services to the Oven.
+func (oven Oven) WithService(services ...Service) Oven {
 	for _, service := range services {
 		oven.caveats = append([]Caveat{service.Caveat()}, oven.caveats...)
 	}

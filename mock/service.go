@@ -3,6 +3,7 @@ package mock
 import (
 	"context"
 	"errors"
+	"lsat/auth"
 	. "lsat/macaroon"
 	"time"
 )
@@ -13,7 +14,8 @@ const (
 
 	timeKey = "time"
 
-	timeErr = "the macaroon is expired!"
+	timeErr     = "the macaroon is expired!"
+	resourceErr = "failed to find ressource for that service!"
 )
 
 type TestServiceManager struct{}
@@ -21,10 +23,10 @@ type TestServiceManager struct{}
 var serviceManager TestServiceManager = TestServiceManager{}
 
 func listCaveats(service Service) []Caveat {
-	arr := make([]Caveat, 0, 1)
+	arr := make([]Caveat, 1)
 	switch service.Name {
 	case DogService, CatService:
-		arr = append(arr, NewCaveat("time", time.Now().Add(time.Duration(time.Hour)).Format(time.Layout)))
+		arr[0] = NewCaveat(timeKey, time.Now().Add(time.Duration(time.Hour)).Format(time.Layout))
 	}
 	return arr
 }
@@ -34,9 +36,9 @@ func (sm *TestServiceManager) Services(cx context.Context, names ...string) ([]S
 	for _, name := range names {
 		switch name {
 		case CatService:
-			list = append(list, NewService("cats", 1000))
+			list = append(list, NewService(CatService, 1000))
 		case DogService:
-			list = append(list, NewService("dogs", 2000))
+			list = append(list, NewService(DogService, 2000))
 		default:
 			return []Service{}, errors.New("unkown service!")
 		}
@@ -68,4 +70,15 @@ func (sm *TestServiceManager) VerifyCaveats(caveats ...Caveat) error {
 		}
 	}
 	return nil
+}
+
+func (sm *TestServiceManager) GetResource(cx context.Context, macaroon Macaroon) (auth.Resource, error) {
+	switch macaroon.Services().Next() {
+	case DogService, CatService:
+		return auth.Resource{
+			Type:    "image/png",
+			Content: []byte{},
+		}, errors.New(resourceErr)
+	}
+	return auth.Resource{}, nil
 }

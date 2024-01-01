@@ -12,10 +12,6 @@ import (
 	"github.com/lightningnetwork/lnd/lntypes"
 )
 
-const (
-	service_name = "dogs"
-)
-
 type Handler struct {
 	*auth.Minter
 }
@@ -52,17 +48,17 @@ func (h *Handler) handleRequest(w http.ResponseWriter, r *http.Request) {
 		uid := secrets.NewUserId()
 
 		// Invalid Authorization header format, respond with 402 Payment Required and WWW-Authenticate header
-		pretoken, err := h.Minter.MintToken(uid, service_name)
+		pretoken, err := h.Minter.MintToken(uid, mock.CatService)
 
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		macaroon := pretoken.Mac.String()
+		macaroon := pretoken.Macaroon.String()
 
 		// Format Macaroon and invoice in WWW-Authenticate header
-		authHeader := fmt.Sprintf("L402 macaroon=\"%s\", invoice=\"%s\"", macaroon, &pretoken.Invoice)
+		authHeader := fmt.Sprintf("L402 macaroon=\"%s\", invoice=\"%s\"", macaroon, &pretoken.PaymentRequest)
 
 		// Set the WWW-Authenticate header
 		w.Header().Set("WWW-Authenticate", authHeader)
@@ -78,7 +74,7 @@ func (h *Handler) handleRequest(w http.ResponseWriter, r *http.Request) {
 	Preimage, _ := lntypes.MakePreimageFromStr(credentials[1])
 
 	token := macaroon.Token{
-		Mac:      Macaroon,
+		Macaroon: Macaroon,
 		Preimage: Preimage,
 	}
 
@@ -88,6 +84,7 @@ func (h *Handler) handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	if err == nil {
 		// Respond with success (for demonstration purposes)
+		// We should respond with the ressource
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Request authorized with Macaroon: %s and Preimage: %s", Macaroon, Preimage)
 	} else {

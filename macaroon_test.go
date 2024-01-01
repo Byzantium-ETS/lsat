@@ -11,7 +11,7 @@ func TestMacaroonEncoding(t *testing.T) {
 	root, _ := secretStore.Secret(uid)
 
 	oven := macaroon.NewOven(root)
-	oven = oven.UserId(uid).Caveats(macaroon.NewCaveat("name", "bob")).Service(macaroon.NewService("rent", 1000))
+	oven = oven.WithUserId(uid).WithCaveats(macaroon.NewCaveat("name", "bob")).WithService(macaroon.NewService("rent", 1000))
 
 	mac, err := oven.Cook()
 
@@ -20,7 +20,7 @@ func TestMacaroonEncoding(t *testing.T) {
 		return
 	}
 
-	t.Log(mac.Caveats())
+	t.Log(mac.ToJSON())
 
 	encodedMac := mac.String()
 
@@ -30,7 +30,8 @@ func TestMacaroonEncoding(t *testing.T) {
 
 	if err != nil {
 		t.Error(err)
-	} else if reflect.DeepEqual(decodedMac, mac) {
+	} else if !reflect.DeepEqual(decodedMac, mac) {
+		t.Log(decodedMac.ToJSON())
 		t.Error("Failed to decode macaroon!")
 	}
 }
@@ -40,7 +41,7 @@ func TestMacaroonSignature(t *testing.T) {
 	root, _ := secretStore.Secret(uid)
 
 	oven := macaroon.NewOven(root)
-	oven = oven.UserId(uid).Caveats(macaroon.NewCaveat("name", "bob")).Service(macaroon.NewService("rent", 1000))
+	oven = oven.WithUserId(uid).WithCaveats(macaroon.NewCaveat("name", "bob")).WithService(macaroon.NewService("rent", 1000))
 
 	mac1, err := oven.Cook()
 
@@ -53,7 +54,7 @@ func TestMacaroonSignature(t *testing.T) {
 	root, _ = secretStore.Secret(uid)
 
 	oven = macaroon.NewOven(root)
-	oven = oven.UserId(uid).Caveats(macaroon.NewCaveat("name", "bob")).Service(macaroon.NewService("rent", 1000))
+	oven = oven.WithUserId(uid).WithCaveats(macaroon.NewCaveat("name", "bob")).WithService(macaroon.NewService("rent", 1000))
 
 	mac2, err := oven.Cook()
 

@@ -1,20 +1,18 @@
 package mock
 
 import (
-	. "lsat/challenge"
+	"lsat/challenge"
 	"lsat/secrets"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 )
 
-const Seed = 0
-
 type TestChallenger struct{}
 
 var challenger = TestChallenger{}
 
-func (*TestChallenger) Challenge(price uint64) (ChallengeResult, error) {
+func (*TestChallenger) Challenge(price uint64) (challenge.ChallengeResult, error) {
 	preimage := lntypes.Preimage(secrets.NewSecret())
-	return ChallengeResult{Preimage: preimage, Invoice: lnrpc.AddInvoiceResponse{}}, nil
+	return challenge.ChallengeResult{Preimage: preimage, PaymentRequest: lnrpc.AddInvoiceResponse{}}, nil
 }

@@ -6,11 +6,9 @@ import (
 	"testing"
 )
 
-var service macaroon.Service = macaroon.NewService("images", 1000)
+var service macaroon.Service = macaroon.NewService("image", 1000)
 
-var caveats []macaroon.Caveat = []macaroon.Caveat{
-	macaroon.NewCaveat("image", "test.png"),
-}
+var caveat macaroon.Caveat = macaroon.NewCaveat("image/png", "test.png")
 
 func TestSecret(t *testing.T) {
 	uid := secretStore.CreateUser()
@@ -47,7 +45,7 @@ func TestMacaroon(t *testing.T) {
 
 	oven := macaroon.NewOven(secret)
 
-	mac, _ := oven.Caveats(caveats...).Service(service).Cook()
+	mac, _ := oven.WithCaveats(caveat).WithService(service).Cook()
 
 	signaturea := mac.Signature()
 
@@ -57,7 +55,7 @@ func TestMacaroon(t *testing.T) {
 
 	oven = macaroon.NewOven(secret)
 
-	mac, _ = oven.Caveats(caveats...).Service(service).Cook()
+	mac, _ = oven.WithCaveats(caveat).WithService(service).Cook()
 
 	signatureb := mac.Signature()
 
