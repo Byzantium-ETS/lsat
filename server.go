@@ -70,7 +70,7 @@ func (h *Handler) handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	credentials := strings.Split(parts[1], ":")
 
-	Macaroon, _ := macaroon.Decode(credentials[0])
+	Macaroon, _ := macaroon.DecodeBase64(credentials[0])
 	Preimage, _ := lntypes.MakePreimageFromStr(credentials[1])
 
 	token := macaroon.Token{

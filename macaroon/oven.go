@@ -13,6 +13,7 @@ type Oven struct {
 	uid     secrets.UserId
 	root    secrets.Secret
 	caveats []Caveat
+	mac     *Macaroon
 }
 
 // NewOven creates a new Oven with the given root secret.
@@ -53,7 +54,10 @@ func (oven Oven) Cook() (Macaroon, error) {
 	mac := hmac.New(sha256.New, oven.root[:])
 
 	// Write the string representation of each caveat into the HMAC
-	for _, caveat := range oven.caveats {
+	for i, caveat := range oven.caveats {
+		if i > 0 {
+			mac = hmac.New(sha256.New, mac.Sum(nil))
+		}
 		mac.Write([]byte(caveat.String()))
 	}
 
@@ -64,6 +68,14 @@ func (oven Oven) Cook() (Macaroon, error) {
 		return Macaroon{}, err
 	}
 
+	var caveats []Caveat
+
+	if oven.mac != nil {
+		caveats = append(oven.mac.caveats, oven.caveats...)
+	} else {
+		caveats = oven.caveats
+	}
+
 	// Create and return the Macaroon with the user ID, caveats, and signature
-	return Macaroon{uid: oven.uid, caveats: oven.caveats, sig: signature}, nil
+	return Macaroon{uid: oven.uid, caveats: caveats, sig: signature}, nil
 }

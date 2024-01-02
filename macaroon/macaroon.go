@@ -50,6 +50,18 @@ func (mac Macaroon) String() string {
 	return base64String
 }
 
+// Create an oven from a Macaroon.
+//
+// This is used when adding third party caveats.
+func (mac *Macaroon) Oven() Oven {
+	root, _ := secrets.MakeSecret(mac.sig[:])
+	return Oven{
+		root: root,
+		uid:  mac.uid,
+		mac:  mac,
+	}
+}
+
 // macaroonJSON struct is used for JSON encoding/decoding of macaroon.
 type macaroonJSON struct {
 	Uid     string   `json:"user_id"`
@@ -76,7 +88,7 @@ func decodeBase64(encodedString string) ([]byte, error) {
 }
 
 // Decode decodes a base64-encoded macaroon string into a Macaroon struct.
-func Decode(encodedString string) (Macaroon, error) {
+func DecodeBase64(encodedString string) (Macaroon, error) {
 	// Decode the base64 string
 	decoded, err := decodeBase64(encodedString)
 	if err != nil {

@@ -50,5 +50,6 @@ func (iter ServiceIterator) HasNext() bool {
 func (iter ServiceIterator) Next() string {
 	// Split the caveat's value to extract service information.
 	service := strings.Split(iter.caveats[0].Value, ":")
+	iter.caveats = iter.caveats[1:]
 	return service[0]
 }

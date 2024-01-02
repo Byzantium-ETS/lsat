@@ -25,9 +25,9 @@ func (lnd *LndClient) Conn() *grpc.ClientConn {
 	return lnd.conn
 }
 
-func NewLndClient(conn *grpc.ClientConn) LndClient {
+func NewLndClient(conn *grpc.ClientConn) LightningNode {
 	client := lnrpc.NewLightningClient(conn)
-	return LndClient{
+	return &LndClient{
 		client,
 		conn,
 	}

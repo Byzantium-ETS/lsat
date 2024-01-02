@@ -26,7 +26,7 @@ func TestMacaroonEncoding(t *testing.T) {
 
 	t.Log(encodedMac)
 
-	decodedMac, err := macaroon.Decode(encodedMac)
+	decodedMac, err := macaroon.DecodeBase64(encodedMac)
 
 	if err != nil {
 		t.Error(err)
@@ -70,4 +70,46 @@ func TestMacaroonSignature(t *testing.T) {
 		t.Error("The hex encoding cannot be similar!")
 	}
 
+}
+
+func TestCaveats(t *testing.T) {
+	uid := secretStore.CreateUser()
+	root, _ := secretStore.Secret(uid)
+
+	oven := macaroon.NewOven(root)
+	oven = oven.WithUserId(uid).WithService(macaroon.NewService("rent", 1000)).WithCaveats(macaroon.NewCaveat("name", "bob"))
+
+	caveat := macaroon.NewCaveat("color", "red")
+
+	mac1, _ := oven.WithCaveats(caveat).Cook()
+	mac2, _ := oven.WithCaveats(caveat).Cook()
+
+	t.Log(mac1.ToJSON())
+	t.Log(mac2.ToJSON())
+
+	if !reflect.DeepEqual(mac1, mac2) {
+		t.Error("Both macaroons should have the same signature!")
+	}
+}
+
+func TestThirdPartyCaveats(t *testing.T) {
+	uid := secretStore.CreateUser()
+	root, _ := secretStore.Secret(uid)
+
+	oven := macaroon.NewOven(root)
+	oven = oven.WithUserId(uid).WithService(macaroon.NewService("rent", 1000)).WithCaveats(macaroon.NewCaveat("name", "bob"))
+
+	mac, _ := oven.Cook()
+
+	thirdPartyCaveat := macaroon.NewCaveat("color", "red")
+
+	macThirdParty, _ := mac.Oven().WithCaveats(thirdPartyCaveat).Cook()
+	macFirstParty, _ := oven.WithCaveats(thirdPartyCaveat).Cook()
+
+	t.Log(macFirstParty.ToJSON())
+	t.Log(macThirdParty.ToJSON())
+
+	if !reflect.DeepEqual(macFirstParty, macThirdParty) {
+		t.Error("Both macaroons should have the same signature!")
+	}
 }

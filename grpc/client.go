@@ -8,7 +8,7 @@ import (
 	// Import any other necessary packages here
 )
 
-func InitGrpcClient(address string) challenge.LndClient {
+func InitGrpcClient(address string) challenge.LightningNode {
 	// Set up a connection to the gRPC server.
 	// Replace "localhost:50051" with the actual server address and port.
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
