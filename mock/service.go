@@ -78,7 +78,7 @@ func (sm *TestServiceManager) GetResource(cx context.Context, macaroon Macaroon)
 		return auth.Resource{
 			Type:    "image/png",
 			Content: []byte{},
-		}, errors.New(resourceErr)
+		}, nil
 	}
-	return auth.Resource{}, nil
+	return auth.Resource{}, errors.New(resourceErr)
 }

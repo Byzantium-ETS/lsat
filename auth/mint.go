@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	PermErr  = "The macaroon lacks permission!"
+	PermErr  = "The macaroon lacks permissions!"
 	TokenErr = "The token could not be found!"
 	SigErr   = "The macaroon has an invalid signature!"
 )
@@ -102,7 +102,7 @@ func (minter *Minter) AuthToken(lsat *macaroon.Token) error {
 }
 
 func (minter *Minter) AuthMacaroon(mac *macaroon.Macaroon) error {
-	secret, _ := minter.secrets.Secret(mac.Uid())
+	secret, _ := minter.secrets.Secret(mac.UserId())
 	oven := macaroon.NewOven(secret)
 	nmac, _ := oven.WithCaveats(mac.Caveats()...).Cook()
 	if mac.Signature() == nmac.Signature() {

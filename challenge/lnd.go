@@ -12,9 +12,10 @@ const (
 	PaymentErr = "Failed to pay invoice!"
 )
 
+// LndClient represents a client for interacting with an LND (Lightning Network Daemon) node.
 type LndClient struct {
-	client lnrpc.LightningClient
-	conn   *grpc.ClientConn
+	client lnrpc.LightningClient // The Lightning gRPC client for making API calls.
+	conn   *grpc.ClientConn      // The gRPC client connection to the LND node.
 }
 
 func (lnd *LndClient) Client() *lnrpc.LightningClient {
@@ -34,9 +35,9 @@ func NewLndClient(conn *grpc.ClientConn) LightningNode {
 }
 
 func (lnd *LndClient) SendPayment(cx context.Context, invoice PaymentRequest) (lntypes.Preimage, error) {
-	encoded_pr := lnrpc.SendRequest{PaymentRequest: invoice.GetPaymentRequest()}
+	sendRequest := lnrpc.SendRequest{PaymentRequest: invoice.GetPaymentRequest()}
 
-	response, err := lnd.client.SendPaymentSync(cx, &encoded_pr)
+	response, err := lnd.client.SendPaymentSync(cx, &sendRequest)
 
 	if err != nil {
 		return lntypes.Preimage{}, err
@@ -52,6 +53,6 @@ func (lnd *LndClient) SendPayment(cx context.Context, invoice PaymentRequest) (l
 }
 
 func (lnd *LndClient) CreateInvoice(cx context.Context, invoice InvoiceBuilder) (PaymentRequest, error) {
-	paymentRequest, err := lnd.client.AddInvoice(cx, &invoice, grpc.EmptyCallOption{})
+	paymentRequest, err := lnd.client.AddInvoice(cx, &invoice)
 	return *paymentRequest, err
 }

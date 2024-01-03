@@ -25,15 +25,15 @@ type ChallengeResult struct {
 
 func (challenger *ChallengeFactory) Challenge(price uint64) (ChallengeResult, error) {
 	secret := secrets.NewSecret()
-	preimage, _ := lntypes.MakePreimage(secret[:])
-	paymentRequest := InvoiceBuilder{
-		RPreimage: preimage[:],
+	Preimage, _ := lntypes.MakePreimage(secret[:])
+	invoice := InvoiceBuilder{
+		RPreimage: Preimage[:],
 		Value:     int64(price),
 		Expiry:    int64(time.Hour), // The time could change in the future
 		IsKeysend: false,
 		Memo:      "L402", // Idealy we would have the service name
 		Private:   false,  // Not sure yet
 	}
-	invoice, err := challenger.LightningNode.CreateInvoice(context.Background(), paymentRequest)
-	return ChallengeResult{Preimage: preimage, PaymentRequest: invoice}, err
+	PaymentRequest, err := challenger.LightningNode.CreateInvoice(context.Background(), invoice)
+	return ChallengeResult{Preimage, PaymentRequest}, err
 }

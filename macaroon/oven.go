@@ -77,5 +77,5 @@ func (oven Oven) Cook() (Macaroon, error) {
 	}
 
 	// Create and return the Macaroon with the user ID, caveats, and signature
-	return Macaroon{uid: oven.uid, caveats: caveats, sig: signature}, nil
+	return Macaroon{user_id: oven.uid, caveats: caveats, signature: signature}, nil
 }

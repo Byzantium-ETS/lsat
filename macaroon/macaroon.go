@@ -14,14 +14,14 @@ type Version = int8
 
 // Macaroon struct represents an LSAT (Lightning Service Authentication Token) macaroon.
 type Macaroon struct {
-	uid     secrets.UserId
-	caveats []Caveat
-	sig     lntypes.Hash
+	user_id   secrets.UserId
+	caveats   []Caveat
+	signature lntypes.Hash
 }
 
 // Uid returns the user ID associated with the macaroon.
-func (mac *Macaroon) Uid() secrets.UserId {
-	return mac.uid
+func (mac *Macaroon) UserId() secrets.UserId {
+	return mac.user_id
 }
 
 // Services extracts service names from the Macaroon's caveats.
@@ -36,7 +36,7 @@ func (mac *Macaroon) Caveats() []Caveat {
 
 // Signature returns the signature of the macaroon.
 func (mac *Macaroon) Signature() string {
-	return mac.sig.String()
+	return mac.signature.String()
 }
 
 // String returns the string representation of the macaroon.
@@ -54,10 +54,10 @@ func (mac Macaroon) String() string {
 //
 // This is used when adding third party caveats.
 func (mac *Macaroon) Oven() Oven {
-	root, _ := secrets.MakeSecret(mac.sig[:])
+	root, _ := secrets.MakeSecret(mac.signature[:])
 	return Oven{
 		root: root,
-		uid:  mac.uid,
+		uid:  mac.user_id,
 		mac:  mac,
 	}
 }
@@ -72,7 +72,7 @@ type macaroonJSON struct {
 // ToJSON converts Macaroon to macaroonJSON.
 func (mac *Macaroon) ToJSON() macaroonJSON {
 	return macaroonJSON{
-		Uid:     mac.uid.String(),
+		Uid:     mac.user_id.String(),
 		Caveats: mac.caveats,
 		Sig:     mac.Signature(),
 	}
@@ -113,9 +113,9 @@ func DecodeBase64(encodedString string) (Macaroon, error) {
 
 	// Create a Macaroon struct
 	mac := Macaroon{
-		uid:     uidHash,
-		caveats: macJSON.Caveats,
-		sig:     sigHash,
+		user_id:   uidHash,
+		caveats:   macJSON.Caveats,
+		signature: sigHash,
 	}
 
 	return mac, nil
