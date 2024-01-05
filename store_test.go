@@ -13,13 +13,13 @@ var caveat macaroon.Caveat = macaroon.NewCaveat("image/png", "test.png")
 func TestSecret(t *testing.T) {
 	uid := secretStore.CreateUser()
 
-	asecret, err := secretStore.Secret(uid)
+	asecret, err := secretStore.NewSecret(uid)
 
 	if err != nil {
 		t.Error("Secret not found in the Store.")
 	}
 
-	bsecret, _ := secretStore.Secret(uid)
+	bsecret, _ := secretStore.GetSecret(uid)
 
 	if asecret != bsecret {
 		t.Error("Mismatch between the secret from the same user.")
@@ -41,7 +41,7 @@ func TestUid(t *testing.T) {
 func TestMacaroon(t *testing.T) {
 	uid := secretStore.CreateUser()
 
-	secret, _ := secretStore.Secret(uid)
+	secret, _ := secretStore.NewSecret(uid)
 
 	oven := macaroon.NewOven(secret)
 
@@ -51,7 +51,7 @@ func TestMacaroon(t *testing.T) {
 
 	uid = secretStore.CreateUser()
 
-	secret, _ = secretStore.Secret(uid)
+	secret, _ = secretStore.NewSecret(uid)
 
 	oven = macaroon.NewOven(secret)
 

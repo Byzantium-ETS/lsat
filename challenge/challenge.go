@@ -10,6 +10,7 @@ import (
 
 // Issues challenges in the form of invoices.
 type Challenger interface {
+	// The price is in satoshi.
 	Challenge(price uint64) (ChallengeResult, error) // Create a challenge.
 }
 
@@ -26,6 +27,7 @@ type ChallengeResult struct {
 func (challenger *ChallengeFactory) Challenge(price uint64) (ChallengeResult, error) {
 	secret := secrets.NewSecret()
 	Preimage, _ := lntypes.MakePreimage(secret[:])
+
 	invoice := InvoiceBuilder{
 		RPreimage: Preimage[:],
 		Value:     int64(price),
@@ -34,6 +36,12 @@ func (challenger *ChallengeFactory) Challenge(price uint64) (ChallengeResult, er
 		Memo:      "L402", // Idealy we would have the service name
 		Private:   false,  // Not sure yet
 	}
+
 	PaymentRequest, err := challenger.LightningNode.CreateInvoice(context.Background(), invoice)
-	return ChallengeResult{Preimage, PaymentRequest}, err
+
+	if err != nil {
+		return ChallengeResult{}, err
+	}
+
+	return ChallengeResult{Preimage, PaymentRequest}, nil
 }

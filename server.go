@@ -86,7 +86,7 @@ func (h *Handler) handleRequest(w http.ResponseWriter, r *http.Request) {
 		// Respond with success (for demonstration purposes)
 		// We should respond with the ressource
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Request authorized with Macaroon: %s and Preimage: %s", Macaroon, Preimage)
+		fmt.Fprintf(w, "Request authorized: %s", token.Macaroon)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "Authentification failed! %s", err)

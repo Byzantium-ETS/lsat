@@ -5,8 +5,8 @@ import (
 	"lsat/macaroon"
 )
 
-// ServiceManager is an interface defining methods for managing services and their capabilities.
-type ServiceManager interface {
+// ServiceLimiter is an interface defining methods for managing services and their capabilities.
+type ServiceLimiter interface {
 	// Services retrieves information about services with the provided names.
 	Services(context.Context, ...string) ([]macaroon.Service, error)
 
@@ -17,15 +17,4 @@ type ServiceManager interface {
 	// VerifyCaveats verifies the validity of a set of macaroon caveats.
 	// It returns an error if any of the caveats are invalid or do not meet the specified criteria.
 	VerifyCaveats(...macaroon.Caveat) error
-
-	// GetResource retrieves the resource associated with the provided service.
-	// The resource can be, for example, an image, file, or any data that the service wants to provide.
-	GetResource(context.Context, macaroon.Macaroon) (Resource, error)
-}
-
-// Resource represents the data associated with a service's resource.
-type Resource struct {
-	// Add fields representing the details of the resource, such as content, type, etc.
-	Content []byte
-	Type    string
 }

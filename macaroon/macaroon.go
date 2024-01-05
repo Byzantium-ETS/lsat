@@ -56,9 +56,9 @@ func (mac Macaroon) String() string {
 func (mac *Macaroon) Oven() Oven {
 	root, _ := secrets.MakeSecret(mac.signature[:])
 	return Oven{
-		root: root,
-		uid:  mac.user_id,
-		mac:  mac,
+		root:     root,
+		user_id:  mac.user_id,
+		macaroon: mac,
 	}
 }
 

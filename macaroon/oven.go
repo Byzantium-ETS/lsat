@@ -10,10 +10,10 @@ import (
 
 // Oven bakes macaroons by combining the root secret, user ID, and caveats.
 type Oven struct {
-	uid     secrets.UserId
-	root    secrets.Secret
-	caveats []Caveat
-	mac     *Macaroon
+	user_id  secrets.UserId
+	root     secrets.Secret
+	caveats  []Caveat
+	macaroon *Macaroon
 }
 
 // NewOven creates a new Oven with the given root secret.
@@ -25,7 +25,7 @@ func NewOven(root secrets.Secret) Oven {
 
 // UserId sets the user ID in the Oven.
 func (oven Oven) WithUserId(uid secrets.UserId) Oven {
-	oven.uid = uid
+	oven.user_id = uid
 	return oven
 }
 
@@ -70,12 +70,12 @@ func (oven Oven) Cook() (Macaroon, error) {
 
 	var caveats []Caveat
 
-	if oven.mac != nil {
-		caveats = append(oven.mac.caveats, oven.caveats...)
+	if oven.macaroon != nil {
+		caveats = append(oven.macaroon.caveats, oven.caveats...)
 	} else {
 		caveats = oven.caveats
 	}
 
 	// Create and return the Macaroon with the user ID, caveats, and signature
-	return Macaroon{user_id: oven.uid, caveats: caveats, signature: signature}, nil
+	return Macaroon{user_id: oven.user_id, caveats: caveats, signature: signature}, nil
 }

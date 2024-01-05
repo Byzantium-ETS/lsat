@@ -3,7 +3,6 @@ package mock
 import (
 	"context"
 	"errors"
-	"lsat/auth"
 	. "lsat/macaroon"
 	"time"
 )
@@ -70,15 +69,4 @@ func (sm *TestServiceManager) VerifyCaveats(caveats ...Caveat) error {
 		}
 	}
 	return nil
-}
-
-func (sm *TestServiceManager) GetResource(cx context.Context, macaroon Macaroon) (auth.Resource, error) {
-	switch macaroon.Services().Next() {
-	case DogService, CatService:
-		return auth.Resource{
-			Type:    "image/png",
-			Content: []byte{},
-		}, nil
-	}
-	return auth.Resource{}, errors.New(resourceErr)
 }
