@@ -29,12 +29,20 @@ func (store *TestStore) CreateUser() UserId {
 	return user
 }
 
-func (store *TestStore) Secret(uid UserId) (Secret, error) {
+func (store *TestStore) GetSecret(uid UserId) (Secret, error) {
 	secret, ok := store.users[uid]
 
 	if !ok {
 		return Secret{}, errors.New("user not found!")
 	}
+
+	return secret, nil
+}
+
+func (store *TestStore) NewSecret(uid UserId) (Secret, error) {
+	secret := NewSecret()
+
+	store.users[uid] = secret
 
 	return secret, nil
 }

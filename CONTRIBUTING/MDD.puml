@@ -35,8 +35,10 @@ package Serveur {
   
   interface "ServiceManager" as SM <<Serveur>>
   
-  SM : + Service(service String) Service
-  SM : + Capabilities(service String) []Caveats
+  SM : + Service(services ...String) ([]Service, error)
+  SM : + Capabilities(service String) ([]Caveats, error)
+  SM : + VerifyCaveats(caveats ...Caveat) error
+  SM : + GetResource(macaroon Macaroon) (Resource, error)
   
   class "Minter" as Mi <<Serveur>> {
     - service ServiceManager
@@ -44,13 +46,16 @@ package Serveur {
     - store SecretStore
   }
   
-  Mi : + mintToken(uid UserId, service Service) (PreLsat, error)
-  Mi : - authToken(uid UserId, lsat *Token) error
+  Mi : + MintToken(uid UserId, services ...Service) (PreToken, error)
+  Mi : - AuthToken(lsat *Token) error
 
 }
 
 
 interface "LightningNode" as LN
+
+LN : SendPayment(PaymentRequest) (Preimage, error)
+LN : CreateInvoice(InvoiceBuilder) (PaymentRequest, error)
   
 class "Token" as Token {
   macaroon Macaroon
@@ -65,8 +70,8 @@ class "PreToken" as pToken {
     
 class "Macaroon" as Mac {
   caveats []Caveat
-  sig String
-  service String
+  signature String
+  user_id UserId
 }
   
 class "TokenId" as Tid {
@@ -76,7 +81,7 @@ class "TokenId" as Tid {
 }
   
 class "Caveat" as Ca {
-  name String
+  key String
   value String
 }
 
@@ -84,6 +89,11 @@ class "Caveat" as Ca {
 class "Service" as Ser {
   name String
   price int64
+}
+
+class "Resource" as Rs {
+  content []byte
+  type String
 }
   
 class "PaymentRequest" as PR {
@@ -113,9 +123,15 @@ Uid "1" -- "1" U : > Identifie
 Sec "1" -- "*" Mac : > Génére
 
 Ser "1" -- "*" SM : < Gère
-Ch "1" -- "*" PR : > Génére
+Ch "1" -- "*" PR : > Construit
 
 Se "1" -- "1" Mi : > Contient
 Se "1" -- "*" Ser : > Offre
+
+LN "1" -- "*" Ch : > Devient
+LN "1" -- "*" PR : > Crée
+
+Ser "1" -- "1" Rs : > Offre
+Mi "1" -- "*" Ser : > Authentifie
 
 @enduml
