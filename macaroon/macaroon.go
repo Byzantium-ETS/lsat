@@ -62,20 +62,24 @@ func (mac *Macaroon) Oven() Oven {
 	}
 }
 
-// macaroonJSON struct is used for JSON encoding/decoding of macaroon.
-type macaroonJSON struct {
+// MacaroonJSON struct is used for JSON encoding/decoding of macaroon.
+type MacaroonJSON struct {
 	Uid     string   `json:"user_id"`
 	Caveats []Caveat `json:"caveats"`
 	Sig     string   `json:"signature"`
 }
 
 // ToJSON converts Macaroon to macaroonJSON.
-func (mac *Macaroon) ToJSON() macaroonJSON {
-	return macaroonJSON{
+func (mac *Macaroon) ToJSON() MacaroonJSON {
+	return MacaroonJSON{
 		Uid:     mac.user_id.String(),
 		Caveats: mac.caveats,
 		Sig:     mac.Signature(),
 	}
+}
+
+func (mac *Macaroon) MarshalJSON() ([]byte, error) {
+	return json.Marshal(mac.ToJSON())
 }
 
 // decodeBase64 decodes a base64-encoded string.
@@ -96,7 +100,7 @@ func DecodeBase64(encodedString string) (Macaroon, error) {
 	}
 
 	// Unmarshal the decoded data into the macaroonJSON type
-	var macJSON macaroonJSON
+	var macJSON MacaroonJSON
 	err = json.Unmarshal(decoded, &macJSON)
 
 	if err != nil {

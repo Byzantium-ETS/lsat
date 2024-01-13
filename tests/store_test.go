@@ -1,14 +1,35 @@
-package main
+package tests
 
 import (
 	"lsat/macaroon"
 	"lsat/mock"
+	"lsat/secrets"
 	"testing"
 )
+
+var secretStore mock.TestStore = mock.NewTestStore()
 
 var service macaroon.Service = macaroon.NewService("image", 1000)
 
 var caveat macaroon.Caveat = macaroon.NewCaveat("image/png", "test.png")
+
+func TestMakeSecret(t *testing.T) {
+	root := secrets.NewSecret()
+
+	t.Log(len(root[:]))
+	t.Log(root)
+
+	newRoot, err := secrets.MakeSecret(root[:])
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if newRoot != root {
+		t.Log("both secrets should be equal")
+	}
+
+}
 
 func TestSecret(t *testing.T) {
 	uid := secretStore.CreateUser()
@@ -35,31 +56,5 @@ func TestUid(t *testing.T) {
 
 	if userA == userB {
 		t.Error("Two users cannot have the same id.")
-	}
-}
-
-func TestMacaroon(t *testing.T) {
-	uid := secretStore.CreateUser()
-
-	secret, _ := secretStore.NewSecret(uid)
-
-	oven := macaroon.NewOven(secret)
-
-	mac, _ := oven.WithCaveats(caveat).WithService(service).Cook()
-
-	signaturea := mac.Signature()
-
-	uid = secretStore.CreateUser()
-
-	secret, _ = secretStore.NewSecret(uid)
-
-	oven = macaroon.NewOven(secret)
-
-	mac, _ = oven.WithCaveats(caveat).WithService(service).Cook()
-
-	signatureb := mac.Signature()
-
-	if signaturea == signatureb {
-		t.Error("Two users cannot produce the same signature for the same given caveats.")
 	}
 }

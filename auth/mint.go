@@ -87,25 +87,33 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 	return token, nil
 }
 
-func (minter *Minter) AuthToken(lsat *macaroon.Token) error {
+func (minter *Minter) AuthToken(lsat *macaroon.Token) (macaroon.Macaroon, error) {
 	tokens := *minter.secrets.Tokens()
 
 	_, ok := tokens[lsat.Id()]
 
 	if !ok {
-		return errors.New(TokenErr)
+		return macaroon.Macaroon{}, errors.New(TokenErr)
 	}
 
-	return minter.AuthMacaroon(&lsat.Macaroon)
+	err := minter.AuthMacaroon(&lsat.Macaroon)
+
+	if err != nil {
+		return macaroon.Macaroon{}, err
+	}
+
+	return minter.service.Sign(lsat.Macaroon)
 }
 
+// / AuthMacaroon only verifies that the authorization server has minter the macaroon.
 func (minter *Minter) AuthMacaroon(mac *macaroon.Macaroon) error {
 	secret, _ := minter.secrets.GetSecret(mac.UserId())
 	oven := macaroon.NewOven(secret)
 	nmac, _ := oven.WithCaveats(mac.Caveats()...).Cook()
-	if mac.Signature() == nmac.Signature() {
-		return minter.service.VerifyCaveats(mac.Caveats()...)
-	} else {
+
+	if mac.Signature() != nmac.Signature() {
 		return errors.New(SigErr) // Faudrait des erreurs
 	}
+
+	return nil
 }

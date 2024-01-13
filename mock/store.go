@@ -6,8 +6,6 @@ import (
 	. "lsat/secrets"
 )
 
-var secretStore TestStore = NewTestStore()
-
 type TestStore struct {
 	users  map[UserId]Secret
 	tokens map[macaroon.TokenID]macaroon.Token

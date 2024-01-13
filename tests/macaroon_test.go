@@ -1,10 +1,36 @@
-package main
+package tests
 
 import (
 	"lsat/macaroon"
 	"reflect"
 	"testing"
 )
+
+func TestMacaroon(t *testing.T) {
+	uid := secretStore.CreateUser()
+
+	secret, _ := secretStore.NewSecret(uid)
+
+	oven := macaroon.NewOven(secret)
+
+	mac, _ := oven.WithCaveats(caveat).WithService(service).Cook()
+
+	signaturea := mac.Signature()
+
+	uid = secretStore.CreateUser()
+
+	secret, _ = secretStore.NewSecret(uid)
+
+	oven = macaroon.NewOven(secret)
+
+	mac, _ = oven.WithCaveats(caveat).WithService(service).Cook()
+
+	signatureb := mac.Signature()
+
+	if signaturea == signatureb {
+		t.Error("Two users cannot produce the same signature for the same given caveats.")
+	}
+}
 
 func TestMacaroonEncoding(t *testing.T) {
 	uid := secretStore.CreateUser()
@@ -100,6 +126,8 @@ func TestThirdPartyCaveats(t *testing.T) {
 	oven = oven.WithUserId(uid).WithService(macaroon.NewService("rent", 1000)).WithCaveats(macaroon.NewCaveat("name", "bob"))
 
 	mac, _ := oven.Cook()
+
+	t.Log(len(mac.Signature()))
 
 	thirdPartyCaveat := macaroon.NewCaveat("color", "red")
 

@@ -10,7 +10,9 @@ import (
 
 type TestChallenger struct{}
 
-var challenger = TestChallenger{}
+func NewChallenger() challenge.Challenger {
+	return &TestChallenger{}
+}
 
 func (*TestChallenger) Challenge(price uint64) (challenge.ChallengeResult, error) {
 	preimage := lntypes.Preimage(secrets.NewSecret())

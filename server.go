@@ -17,12 +17,12 @@ type Handler struct {
 }
 
 func HttpServer() {
-	servicesManager := mock.TestServiceManager{}
+	serviceLimiter := mock.NewServiceLimiter()
 	secretStore := mock.NewTestStore()
-	challenger := mock.TestChallenger{}
+	challenger := mock.NewChallenger()
 
 	// Initialize your Server instance
-	minter := auth.NewMinter(&servicesManager, &secretStore, &challenger)
+	minter := auth.NewMinter(&serviceLimiter, &secretStore, challenger)
 
 	// Create a Handler with access to the Server
 	handle := &Handler{Minter: &minter}
@@ -80,13 +80,13 @@ func (h *Handler) handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Process the request with the extracted Macaroon and preimage
 	// Your logic for handling the request goes here...
-	err := h.Minter.AuthToken(&token)
+	signedMac, err := h.Minter.AuthToken(&token)
 
 	if err == nil {
 		// Respond with success (for demonstration purposes)
 		// We should respond with the ressource
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Request authorized: %s", token.Macaroon)
+		fmt.Fprintf(w, "Request authorized: %s", signedMac.ToJSON())
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "Authentification failed! %s", err)
