@@ -42,7 +42,11 @@ func (mac *Macaroon) Signature() string {
 // String returns the string representation of the macaroon.
 func (mac Macaroon) String() string {
 	// Marshal the Macaroon struct to JSON
-	jsonData, _ := json.Marshal(mac.ToJSON())
+	jsonData, err := json.Marshal(mac.ToJSON())
+
+	if err != nil {
+		panic(err)
+	}
 
 	// Encode the JSON data to base64
 	base64String := base64.StdEncoding.EncodeToString(jsonData)

@@ -35,8 +35,6 @@ func NewServiceLimiter() TestServiceLimiter {
 }
 
 // listCaveats generates a list of caveats based on the provided service.
-// It returns a slice of Caveat, where each element represents a specific caveat
-// associated with the given service.
 func listCaveats(service Service) []Caveat {
 	// Use a switch statement to handle different services and their respective caveats.
 	switch service.Name {
@@ -48,6 +46,29 @@ func listCaveats(service Service) []Caveat {
 		// If the service is not explicitly handled, return an empty slice.
 		return nil
 	}
+}
+
+// verifyCaveats checks the validity of the provided caveats.
+func (s *TestServiceLimiter) verifyCaveats(caveats ...Caveat) error {
+	for _, caveat := range caveats {
+		switch caveat.Key {
+		case timeKey:
+			// Parse the value of the time caveat as a time.Time.
+			expiry, err := time.Parse(time.Layout, caveat.Value)
+
+			// If there is an error parsing the time, return the error.
+			if err != nil {
+				return err
+			}
+
+			// Check if the expiry time is before the current time.
+			if expiry.Before(time.Now()) {
+				return errors.New(timeErr)
+			}
+		}
+	}
+	// If all checks pass, return nil (no error).
+	return nil
 }
 
 func (s *TestServiceLimiter) Services(cx context.Context, names ...string) ([]Service, error) {
@@ -71,31 +92,6 @@ func (s *TestServiceLimiter) Capabilities(cx context.Context, services ...Servic
 		arr = append(arr, listCaveats(service)...)
 	}
 	return arr, nil
-}
-
-// verifyCaveats checks the validity of the provided caveats.
-// It specifically checks the expiry time caveat and returns an error if the
-// expiry time has passed.
-func (s *TestServiceLimiter) verifyCaveats(caveats ...Caveat) error {
-	for _, caveat := range caveats {
-		switch caveat.Key {
-		case timeKey:
-			// Parse the value of the time caveat as a time.Time.
-			expiry, err := time.Parse(time.Layout, caveat.Value)
-
-			// If there is an error parsing the time, return the error.
-			if err != nil {
-				return err
-			}
-
-			// Check if the expiry time is before the current time.
-			if expiry.Before(time.Now()) {
-				return errors.New(timeErr)
-			}
-		}
-	}
-	// If all checks pass, return nil (no error).
-	return nil
 }
 
 // Sign signs the given macaroon by encrypting its signature with the service's secret.

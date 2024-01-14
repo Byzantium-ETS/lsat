@@ -16,25 +16,56 @@ type Handler struct {
 	*auth.Minter
 }
 
+var serviceLimiter = mock.NewServiceLimiter()
+var secretStore = mock.NewTestStore()
+var challenger = mock.NewChallenger()
+
 func HttpServer() {
-	serviceLimiter := mock.NewServiceLimiter()
-	secretStore := mock.NewTestStore()
-	challenger := mock.NewChallenger()
 
 	// Initialize your Server instance
 	minter := auth.NewMinter(&serviceLimiter, &secretStore, challenger)
 
-	// Create a Handler with access to the Server
+	// Create a Handler with access to the Minter
 	handle := &Handler{Minter: &minter}
 
 	fmt.Println("Server launched!")
-	http.HandleFunc("/", handle.handleRequest)        // Retourné dans le cas où la platforme reçoit un Token invalide
+	http.HandleFunc("/protected", handle.handleAuthorization)
+	http.HandleFunc("/", handle.handleAuthentication) // Retourné dans le cas où la platforme reçoit un Token invalide
 	err := http.ListenAndServe("localhost:8080", nil) // Ca devrait etre lié à la platforme?
 
 	fmt.Println(err)
 }
 
-func (h *Handler) handleRequest(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
+	// Extract the Authorization header
+	authHeader := r.Header.Get("Authorization")
+
+	// Check if Authorization header is present
+	// Parse the Authorization header
+	parts := strings.Split(authHeader, " ")
+
+	if len(parts) != 2 || parts[0] != "L402" {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "Unknown request!")
+		return
+	}
+
+	Macaroon, _ := macaroon.DecodeBase64(parts[1])
+
+	err := serviceLimiter.VerifyMacaroon(&Macaroon)
+
+	if err == nil {
+		// Respond with success (for demonstration purposes)
+		// We should respond with the ressource
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "Request authorized: %s", Macaroon)
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "Authorization failed! %s", err)
+	}
+}
+
+func (h *Handler) handleAuthentication(w http.ResponseWriter, r *http.Request) {
 	// Extract the Authorization header
 	authHeader := r.Header.Get("Authorization")
 
@@ -86,7 +117,7 @@ func (h *Handler) handleRequest(w http.ResponseWriter, r *http.Request) {
 		// Respond with success (for demonstration purposes)
 		// We should respond with the ressource
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Request authorized: %s", signedMac.ToJSON())
+		fmt.Fprintf(w, "Access token: %s", signedMac.ToJSON())
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "Authentification failed! %s", err)
