@@ -20,7 +20,7 @@ func TestMintAuthMacaroon(t *testing.T) {
 
 	preToken, err := minter.MintToken(uid, mock.DogService)
 
-	mac := preToken.Macaroon.String()
+	mac := preToken.Macaroon.ToJSON().String()
 
 	t.Log("macaroon: ", mac)
 

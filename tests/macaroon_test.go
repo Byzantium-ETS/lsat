@@ -48,7 +48,7 @@ func TestMacaroonEncoding(t *testing.T) {
 
 	t.Log(mac.ToJSON())
 
-	encodedMac := mac.String()
+	encodedMac := mac.ToJSON().String()
 
 	t.Log(encodedMac)
 
@@ -92,7 +92,7 @@ func TestMacaroonSignature(t *testing.T) {
 	t.Log(mac1)
 	t.Log(mac2)
 
-	if mac1.String() == mac2.String() {
+	if mac1.Signature() == mac2.Signature() {
 		t.Error("The hex encoding cannot be similar!")
 	}
 

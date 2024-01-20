@@ -16,6 +16,10 @@ type Handler struct {
 	*auth.Minter
 }
 
+const (
+	address = "localhost:8080"
+)
+
 var serviceLimiter = mock.NewServiceLimiter()
 var secretStore = mock.NewTestStore()
 var challenger = mock.NewChallenger()
@@ -28,11 +32,10 @@ func HttpServer() {
 	// Create a Handler with access to the Minter
 	handle := &Handler{Minter: &minter}
 
-	fmt.Println("Server launched!")
-	http.HandleFunc("/protected", handle.handleAuthorization)
-	http.HandleFunc("/", handle.handleAuthentication) // Retourné dans le cas où la platforme reçoit un Token invalide
-	err := http.ListenAndServe("localhost:8080", nil) // Ca devrait etre lié à la platforme?
-
+	fmt.Println("Server launched at", address)
+	http.HandleFunc("/", handle.handleAuthentication)         // authentication of the user/macaroon
+	http.HandleFunc("/protected", handle.handleAuthorization) // authorization of access token (a signed macaroon)
+	err := http.ListenAndServe(address, nil)
 	fmt.Println(err)
 }
 
@@ -52,16 +55,18 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 
 	Macaroon, _ := macaroon.DecodeBase64(parts[1])
 
+	fmt.Println(Macaroon)
+
 	err := serviceLimiter.VerifyMacaroon(&Macaroon)
 
 	if err == nil {
 		// Respond with success (for demonstration purposes)
 		// We should respond with the ressource
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Request authorized: %s", Macaroon)
+		fmt.Fprintf(w, "Request authorized!")
 	} else {
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "Authorization failed! %s", err)
+		fmt.Fprintf(w, "Authorization failed!")
 	}
 }
 
@@ -86,10 +91,10 @@ func (h *Handler) handleAuthentication(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		macaroon := pretoken.Macaroon.String()
+		macaroon := pretoken.Macaroon.ToJSON()
 
 		// Format Macaroon and invoice in WWW-Authenticate header
-		authHeader := fmt.Sprintf("L402 macaroon=\"%s\", invoice=\"%s\"", macaroon, &pretoken.PaymentRequest)
+		authHeader := fmt.Sprintf("L402 macaroon=\"%s\", invoice=\"%s\"", macaroon, pretoken.PaymentRequest.GetPaymentRequest())
 
 		// Set the WWW-Authenticate header
 		w.Header().Set("WWW-Authenticate", authHeader)
@@ -117,7 +122,7 @@ func (h *Handler) handleAuthentication(w http.ResponseWriter, r *http.Request) {
 		// Respond with success (for demonstration purposes)
 		// We should respond with the ressource
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Access token: %s", signedMac.ToJSON())
+		fmt.Fprintf(w, "L402 macaroon=%s", signedMac.ToJSON())
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "Authentification failed! %s", err)

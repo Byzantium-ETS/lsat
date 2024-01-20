@@ -1,17 +1,12 @@
 package tests
 
 import (
-	"lsat/macaroon"
 	"lsat/mock"
 	"lsat/secrets"
 	"testing"
 )
 
 var secretStore mock.TestStore = mock.NewTestStore()
-
-var service macaroon.Service = macaroon.NewService("image", 1000)
-
-var caveat macaroon.Caveat = macaroon.NewCaveat("image/png", "test.png")
 
 func TestMakeSecret(t *testing.T) {
 	root := secrets.NewSecret()

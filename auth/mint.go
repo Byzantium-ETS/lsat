@@ -93,7 +93,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 	return token, nil
 }
 
-// AuthToken generates an authentication token (Macaroon) based on the provided LSAT (Lightning Service Authentication Token).
+// AuthToken generates a service token (Macaroon) based on the provided LSAT.
 func (minter *Minter) AuthToken(lsat *macaroon.Token) (macaroon.Macaroon, error) {
 	// Retrieve the stored tokens.
 	tokens := *minter.secrets.Tokens()

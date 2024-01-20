@@ -8,13 +8,14 @@ import (
 	"github.com/lightningnetwork/lnd/lntypes"
 )
 
-type TestChallenger struct{}
+type testChallenger struct{}
 
 func NewChallenger() challenge.Challenger {
-	return &TestChallenger{}
+	return &testChallenger{}
 }
 
-func (*TestChallenger) Challenge(price uint64) (challenge.ChallengeResult, error) {
+// The invoice will be the preimage for testing purposes.
+func (*testChallenger) Challenge(price uint64) (challenge.ChallengeResult, error) {
 	preimage := lntypes.Preimage(secrets.NewSecret())
-	return challenge.ChallengeResult{Preimage: preimage, PaymentRequest: lnrpc.AddInvoiceResponse{}}, nil
+	return challenge.ChallengeResult{Preimage: preimage, PaymentRequest: lnrpc.AddInvoiceResponse{PaymentRequest: preimage.String()}}, nil
 }

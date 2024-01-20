@@ -5,6 +5,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	. "lsat/macaroon"
 	"lsat/secrets"
@@ -99,36 +100,41 @@ func (s *TestServiceLimiter) Capabilities(cx context.Context, services ...Servic
 // newly signed macaroon.
 func (s *TestServiceLimiter) Sign(mac Macaroon) (Macaroon, error) {
 	// Encrypt the macaroon's signature using the service's secret.
-	signature := encrypt(s.secret[:], mac.Signature())
+	signature, _ := encrypt(s.secret[:], mac.Signature().String())
+
+	// Encode the encrypted signature in hexadecimal.
+	encodedSig := hex.EncodeToString(signature)
 
 	// Add a new caveat to the macaroon containing the encrypted signature.
-	return mac.Oven().WithCaveats(NewCaveat(signatureKey, string(signature))).Cook()
+	return mac.Oven().WithCaveats(NewCaveat(signatureKey, encodedSig)).Cook()
 }
 
 // VerifyMacaroon verifies the integrity and authenticity of the given macaroon.
 // It checks the signature and validates the caveats.
 func (s *TestServiceLimiter) VerifyMacaroon(mac *Macaroon) error {
-	var signature string
+	var signature lntypes.Hash
 	var caveats []Caveat
 
 	// Iterate through the macaroon's caveats to find the signature caveat.
 	for i, caveat := range mac.Caveats() {
 		if caveat.Key == signatureKey {
+			decodedSig, err := hex.DecodeString(caveat.Value)
+			if err != nil {
+				return err
+			}
 			// Decrypt the signature value using the secret.
-			signature = decrypt(s.secret[:], caveat.Value)
+			rawSignature, err := decrypt(s.secret[:], decodedSig)
+			if err != nil {
+				return err
+			}
+			signature, _ = lntypes.MakeHashFromStr(rawSignature)
 			caveats = mac.Caveats()[i:]
 			break
 		}
 	}
 
-	// Convert the decrypted signature to a hash.
-	hash, err := lntypes.MakeHashFromStr(signature)
-	if err != nil {
-		return err
-	}
-
 	// Create a new secret using the hash as the root.
-	root, err := secrets.MakeSecret(hash[:])
+	root, err := secrets.MakeSecret(signature[:])
 	if err != nil {
 		return err
 	}
@@ -145,15 +151,15 @@ func (s *TestServiceLimiter) VerifyMacaroon(mac *Macaroon) error {
 	return s.verifyCaveats(mac.Caveats()...)
 }
 
-func encrypt(secretKey []byte, plaintext string) string {
+func encrypt(secretKey []byte, plaintext string) ([]byte, error) {
 	aes, err := aes.NewCipher([]byte(secretKey))
 	if err != nil {
-		panic(err)
+		return []byte{}, err
 	}
 
 	gcm, err := cipher.NewGCM(aes)
 	if err != nil {
-		panic(err)
+		return []byte{}, err
 	}
 
 	// We need a 12-byte nonce for GCM (modifiable if you use cipher.NewGCMWithNonceSize())
@@ -161,26 +167,26 @@ func encrypt(secretKey []byte, plaintext string) string {
 	nonce := make([]byte, gcm.NonceSize())
 	_, err = rand.Read(nonce)
 	if err != nil {
-		panic(err)
+		return []byte{}, err
 	}
 
 	// ciphertext here is actually nonce+ciphertext
 	// So that when we decrypt, just knowing the nonce size
 	// is enough to separate it from the ciphertext.
-	ciphertext := gcm.Seal(nonce, nonce, []byte(plaintext), nil)
+	cipher := gcm.Seal(nonce, nonce, []byte(plaintext), nil)
 
-	return string(ciphertext)
+	return cipher, nil
 }
 
-func decrypt(secretKey []byte, ciphertext string) string {
+func decrypt(secretKey []byte, ciphertext []byte) (string, error) {
 	aes, err := aes.NewCipher([]byte(secretKey))
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	gcm, err := cipher.NewGCM(aes)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	// Since we know the ciphertext is actually nonce+ciphertext
@@ -188,10 +194,7 @@ func decrypt(secretKey []byte, ciphertext string) string {
 	nonceSize := gcm.NonceSize()
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
 
-	plaintext, err := gcm.Open(nil, []byte(nonce), []byte(ciphertext), nil)
-	if err != nil {
-		panic(err)
-	}
+	plaintext, _ := gcm.Open(nil, []byte(nonce), ciphertext, nil)
 
-	return string(plaintext)
+	return string(plaintext), nil
 }

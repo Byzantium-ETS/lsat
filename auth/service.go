@@ -16,7 +16,7 @@ type ServiceLimiter interface {
 
 	// Sign apply a seal on the macaroon that is used to determined if it was authenticated.
 	//
-	// The strategy is left to the service.
+	// The signature must be encoded in hexadecimal.
 	//
 	// TO-DO: Define a spec the service can use to sign the token.
 	Sign(macaroon.Macaroon) (macaroon.Macaroon, error)

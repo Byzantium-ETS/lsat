@@ -35,23 +35,8 @@ func (mac *Macaroon) Caveats() []Caveat {
 }
 
 // Signature returns the signature of the macaroon.
-func (mac *Macaroon) Signature() string {
-	return mac.signature.String()
-}
-
-// String returns the string representation of the macaroon.
-func (mac Macaroon) String() string {
-	// Marshal the Macaroon struct to JSON
-	jsonData, err := json.Marshal(mac.ToJSON())
-
-	if err != nil {
-		panic(err)
-	}
-
-	// Encode the JSON data to base64
-	base64String := base64.StdEncoding.EncodeToString(jsonData)
-
-	return base64String
+func (mac *Macaroon) Signature() lntypes.Hash {
+	return mac.signature
 }
 
 // Create an oven from a Macaroon.
@@ -78,8 +63,22 @@ func (mac *Macaroon) ToJSON() MacaroonJSON {
 	return MacaroonJSON{
 		Uid:     mac.user_id.String(),
 		Caveats: mac.caveats,
-		Sig:     mac.Signature(),
+		Sig:     mac.Signature().String(),
 	}
+}
+
+func (mac MacaroonJSON) String() string {
+	// Marshal the Macaroon struct to JSON
+	jsonData, err := json.Marshal(mac)
+
+	if err != nil {
+		panic(err)
+	}
+
+	// Encode the JSON data to base64
+	base64String := base64.StdEncoding.EncodeToString(jsonData)
+
+	return base64String
 }
 
 func (mac *Macaroon) MarshalJSON() ([]byte, error) {

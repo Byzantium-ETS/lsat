@@ -47,7 +47,7 @@ type ServiceIterator struct {
 	caveats []Caveat
 }
 
-func (iter *ServiceIterator) String() string {
+func (iter ServiceIterator) String() string {
 	s := "services: "
 
 	for i := 0; iter.caveats[i].Key == "service"; i++ {

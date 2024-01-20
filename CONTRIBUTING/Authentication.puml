@@ -1,5 +1,5 @@
 @startuml
-title L402 : Service authentication flow
+title L402 : Service authorization flow
 
 hide stereotype
 hide empty members
@@ -12,7 +12,7 @@ participant "Auth Server Node" as SNode  #B9A898
 participant "Resource Server" as Res #e06666
 
 alt First time user
-  C -> Auth: GET /access
+  C -> Auth: GET /
   activate Auth
     Auth -> Auth: Check token, not found
     Auth -> SNode: Create invoice
@@ -28,7 +28,7 @@ alt First time user
     CNode <-- SNode: Preimage
   deactivate SNode
   C <-- CNode: Preimage
-  C -> Auth: GET /access, token + preimage
+  C -> Auth: GET /, token + preimage
   activate Auth
     Auth -> Auth: Check token, validate payment
     C <-- Auth: Access token
