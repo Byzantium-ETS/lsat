@@ -17,15 +17,19 @@ type Handler struct {
 }
 
 const (
-	address = "localhost:8080"
+	address           = "localhost:8080"
+	macaroonHeader    = "L402"
+	catService        = mock.CatService
+	authFailedMessage = "Authentication failed!"
 )
 
-var serviceLimiter = mock.NewServiceLimiter()
-var secretStore = mock.NewTestStore()
-var challenger = mock.NewChallenger()
+var (
+	serviceLimiter = mock.NewServiceLimiter()
+	secretStore    = mock.NewTestStore()
+	challenger     = mock.NewChallenger()
+)
 
-func HttpServer() {
-
+func main() {
 	// Initialize your Server instance
 	minter := auth.NewMinter(&serviceLimiter, &secretStore, challenger)
 
@@ -33,8 +37,8 @@ func HttpServer() {
 	handle := &Handler{Minter: &minter}
 
 	fmt.Println("Server launched at", address)
-	http.HandleFunc("/", handle.handleAuthentication)         // authentication of the user/macaroon
-	http.HandleFunc("/protected", handle.handleAuthorization) // authorization of access token (a signed macaroon)
+	http.HandleFunc("/", handle.handleAuthentication)
+	http.HandleFunc("/protected", handle.handleAuthorization)
 	err := http.ListenAndServe(address, nil)
 	fmt.Println(err)
 }
@@ -47,26 +51,24 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 	// Parse the Authorization header
 	parts := strings.Split(authHeader, " ")
 
-	if len(parts) != 2 || parts[0] != "L402" {
-		w.WriteHeader(http.StatusNotFound)
+	if len(parts) != 2 || parts[0] != macaroonHeader {
+		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprintf(w, "Unknown request!")
 		return
 	}
 
-	Macaroon, _ := macaroon.DecodeBase64(parts[1])
+	macaroon, _ := macaroon.DecodeBase64(parts[1])
 
-	fmt.Println(Macaroon)
-
-	err := serviceLimiter.VerifyMacaroon(&Macaroon)
+	err := serviceLimiter.VerifyMacaroon(&macaroon)
 
 	if err == nil {
 		// Respond with success (for demonstration purposes)
-		// We should respond with the ressource
+		// We should respond with the resource
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Request authorized!")
 	} else {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "Authorization failed!")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "%s", authFailedMessage)
 	}
 }
 
@@ -79,22 +81,22 @@ func (h *Handler) handleAuthentication(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(authHeader, " ")
 
 	// Extract the Macaroon and preimage from the Authorization header
-	if len(parts) != 2 || parts[0] != "L402" {
+	if len(parts) != 2 || parts[0] != macaroonHeader {
 		// Create a new UserId
 		uid := secrets.NewUserId()
 
 		// Invalid Authorization header format, respond with 402 Payment Required and WWW-Authenticate header
-		pretoken, err := h.Minter.MintToken(uid, mock.CatService)
+		pretoken, err := h.Minter.MintToken(uid, catService)
 
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		macaroon := pretoken.Macaroon.ToJSON()
+		macaroon := pretoken.Macaroon
 
 		// Format Macaroon and invoice in WWW-Authenticate header
-		authHeader := fmt.Sprintf("L402 macaroon=\"%s\", invoice=\"%s\"", macaroon, pretoken.PaymentRequest.GetPaymentRequest())
+		authHeader := fmt.Sprintf("%s macaroon=\"%s\", invoice=\"%s\"", macaroonHeader, macaroon, pretoken.PaymentRequest.GetPaymentRequest())
 
 		// Set the WWW-Authenticate header
 		w.Header().Set("WWW-Authenticate", authHeader)
@@ -120,11 +122,11 @@ func (h *Handler) handleAuthentication(w http.ResponseWriter, r *http.Request) {
 
 	if err == nil {
 		// Respond with success (for demonstration purposes)
-		// We should respond with the ressource
+		// We should respond with the resource
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "L402 macaroon=%s", signedMac.ToJSON())
+		fmt.Fprintf(w, "%s", signedMac)
 	} else {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "Authentification failed! %s", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "%s %s", authFailedMessage, err)
 	}
 }

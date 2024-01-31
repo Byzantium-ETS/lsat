@@ -39,6 +39,20 @@ func (mac *Macaroon) Signature() lntypes.Hash {
 	return mac.signature
 }
 
+func (mac Macaroon) String() string {
+	// Marshal the Macaroon struct to JSON
+	jsonData, err := json.Marshal(mac.ToJSON())
+
+	if err != nil {
+		panic(err)
+	}
+
+	// Encode the JSON data to base64
+	base64String := base64.StdEncoding.EncodeToString(jsonData)
+
+	return base64String
+}
+
 // Create an oven from a Macaroon.
 //
 // This is used when adding third party caveats.
@@ -75,10 +89,7 @@ func (mac MacaroonJSON) String() string {
 		panic(err)
 	}
 
-	// Encode the JSON data to base64
-	base64String := base64.StdEncoding.EncodeToString(jsonData)
-
-	return base64String
+	return string(jsonData)
 }
 
 func (mac *Macaroon) MarshalJSON() ([]byte, error) {

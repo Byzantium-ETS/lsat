@@ -48,7 +48,7 @@ func TestMacaroonEncoding(t *testing.T) {
 
 	t.Log(mac.ToJSON())
 
-	encodedMac := mac.ToJSON().String()
+	encodedMac := mac.String()
 
 	t.Log(encodedMac)
 

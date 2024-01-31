@@ -57,7 +57,7 @@ func TestServiceAuthMacaroonSignature(t *testing.T) {
 		t.Error(err)
 	}
 
-	newMac, err := macaroon.DecodeBase64(signedMac.ToJSON().String())
+	newMac, err := macaroon.DecodeBase64(signedMac.String())
 
 	if err != nil {
 		t.Error(err)
@@ -90,7 +90,7 @@ func TestServiceAuthMacaroonEncoded(t *testing.T) {
 		t.Error(err)
 	}
 
-	mac, err = macaroon.DecodeBase64(mac.ToJSON().String())
+	mac, err = macaroon.DecodeBase64(mac.String())
 
 	if err != nil {
 		t.Error(err)
