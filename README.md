@@ -6,7 +6,7 @@ Une implementation prototype d'un serveur d'authentification [L402](https://docs
 
 ![mdd](out/CONTRIBUTING/MDD/MDD.svg)
 
-## Authentification
+## Authorization
 
 ![dss](out/CONTRIBUTING/Authorization/Authorization.svg)
 

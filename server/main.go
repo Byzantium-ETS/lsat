@@ -44,7 +44,7 @@ func main() {
 
 	fmt.Println("Server launched at", address)
 	http.HandleFunc("/", handle.handleAuthorization)
-	http.Handle("/protected", http.RedirectHandler(protectedAddress+"/protected", http.StatusTemporaryRedirect))
+	http.HandleFunc("/protected", handle.handleProtected)
 	err := http.ListenAndServe(address, nil)
 	fmt.Println(err)
 }
@@ -127,9 +127,9 @@ func (h *Handler) handleProtected(w http.ResponseWriter, r *http.Request) {
 
 	err := h.Minter.AuthToken(&token)
 
-	if err != nil {
+	if err == nil {
 		// The request is redirected to the server with the protected ressource.
-		http.Redirect(w, r, protectedAddress+"/protected", http.StatusOK)
+		http.RedirectHandler(protectedAddress+"/protected", http.StatusTemporaryRedirect).ServeHTTP(w, r)
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprintf(w, "%s", err)
