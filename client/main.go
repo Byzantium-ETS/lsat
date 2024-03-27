@@ -11,26 +11,25 @@ import (
 )
 
 const (
-	serverAddress = "http://localhost:8080"
+	authAddress = "http://localhost:8080"
 )
 
 type TestClient struct {
-	macaroon macaroon.Macaroon
 }
 
 func main() {
 	client := TestClient{}
-	client.sendAuthenticationRequest()
+	client.sendTokenRequest()
 }
 
 func parseLSATString(mac string, invoice string) (macaroon.Token, error) {
 	Macaroon, err := parseMacaroonString(mac)
 	if err != nil {
-		return macaroon.Token{}, fmt.Errorf("Error decoding macaroon: %v", err)
+		return macaroon.Token{}, fmt.Errorf("error decoding macaroon: %v", err)
 	}
 	Preimage, err := parsePreimageString(invoice)
 	if err != nil {
-		return macaroon.Token{}, fmt.Errorf("Error decoding preimage: %v", err)
+		return macaroon.Token{}, fmt.Errorf("error decoding preimage: %v", err)
 	}
 
 	// You can use the decoded macaroon and invoice as needed in your application
@@ -60,11 +59,11 @@ func parsePreimageString(input string) (lntypes.Preimage, error) {
 }
 
 // TO-DO Put the response in a struct
-func (c *TestClient) sendAuthenticationRequest() {
-	fmt.Println("Sending Authentication Request...")
+func (c *TestClient) sendTokenRequest() {
+	fmt.Println("Requesting Token...")
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", serverAddress, nil)
+	req, err := http.NewRequest("GET", authAddress, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return
@@ -98,20 +97,20 @@ func (c *TestClient) sendAuthenticationRequest() {
 				return
 			}
 
-			fmt.Println(token.Macaroon.ToJSON(), "\n")
+			fmt.Println(token.Macaroon.ToJSON())
 
-			c.sendAuthorizationRequest(token)
+			c.sendAuthorizationRequest(authAddress, token)
 		}
 	} else {
 		fmt.Println("Unexpected response status:", resp.Status)
 	}
 }
 
-func (c *TestClient) sendAuthorizationRequest(token macaroon.Token) {
+func (c *TestClient) sendAuthorizationRequest(address string, token macaroon.Token) {
 	fmt.Println("Sending Authorization Request...")
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", serverAddress, nil)
+	req, err := http.NewRequest("GET", address+"/protected", nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return
@@ -132,50 +131,10 @@ func (c *TestClient) sendAuthorizationRequest(token macaroon.Token) {
 	if resp.StatusCode == http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		// Parse the WWW-Authenticate header to get the LSAT token and invoice
-		encodedMac := string(body)
+		protected := string(body)
 
-		if len(encodedMac) > 0 {
-			signedMac, err := macaroon.DecodeBase64(encodedMac)
-			if err != nil {
-				return
-			}
-
-			fmt.Println(signedMac.ToJSON(), "\n")
-
-			c.macaroon = signedMac
-
-			c.sendProtectedRequest()
-		}
+		fmt.Println("Success : " + protected)
 	} else {
 		fmt.Println("Unexpected response status:", resp.Status)
 	}
-}
-
-// Reuse the response from the first GET
-func (c *TestClient) sendProtectedRequest() {
-	fmt.Println("Sending Protected Request...")
-
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", serverAddress+"/protected", nil)
-	if err != nil {
-		fmt.Println("Error creating request:", err)
-		return
-	}
-
-	// Set the LSAT Authorization header with a valid token and preimage for demonstration
-	req.Header.Set("Authorization", fmt.Sprintf("L402 %s", c.macaroon))
-
-	// Perform the request
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Error sending request:", err)
-		return
-	} else if resp.StatusCode == http.StatusUnauthorized {
-		fmt.Println("Request unauthorized!")
-		return
-	}
-
-	defer resp.Body.Close()
-
-	fmt.Println(resp.Status)
 }

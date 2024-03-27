@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	permErr  = "The macaroon lacks permissions!"
-	tokenErr = "The token could not be found!"
-	sigErr   = "The macaroon has an invalid signature!"
+	permErr  = "the macaroon lacks permissions"
+	tokenErr = "the token could not be found"
+	sigErr   = "the macaroon has an invalid signature"
 )
 
 // https://github.com/lightninglabs/aperture/blob/master/mint/mint.go#L65
@@ -74,7 +74,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 	oven := macaroon.NewOven(secret)
 
 	// Cook the Macaroon with the user ID, requested services, and retrieved capabilities.
-	mac, err := oven.WithUserId(uid).WithService(services...).WithCaveats(caveats...).Cook()
+	mac, err := oven.WithUserId(uid).WithService(services...).WithThirdPartyCaveats(caveats...).Cook()
 	if err != nil {
 		return token, err
 	}
@@ -93,35 +93,40 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 	return token, nil
 }
 
-// AuthToken generates a service token (Macaroon) based on the provided LSAT.
-func (minter *Minter) AuthToken(lsat *macaroon.Token) (macaroon.Macaroon, error) {
+// Authentify the validity of the token.
+func (minter *Minter) AuthToken(lsat *macaroon.Token) error {
 	// Retrieve the stored tokens.
 	tokens := *minter.secrets.Tokens()
 
 	// Check if the LSAT's ID is present in the stored tokens.
 	_, ok := tokens[lsat.Id()]
 	if !ok {
-		return macaroon.Macaroon{}, errors.New(tokenErr)
+		return errors.New(tokenErr)
 	}
 
 	// Validate the LSAT's Macaroon using the authentication service.
 	err := minter.AuthMacaroon(&lsat.Macaroon)
 	if err != nil {
-		return macaroon.Macaroon{}, err
+		return err
 	}
 
-	// Sign the validated Macaroon using the service's Sign method.
-	return minter.service.Sign(lsat.Macaroon)
+	return nil
 }
 
-// / AuthMacaroon only verifies that the authorization server has minter the macaroon.
+// Verifies that signature and caveats are valid.
 func (minter *Minter) AuthMacaroon(mac *macaroon.Macaroon) error {
 	secret, _ := minter.secrets.GetSecret(mac.UserId())
 	oven := macaroon.NewOven(secret)
-	nmac, _ := oven.WithCaveats(mac.Caveats()...).Cook()
+	nmac, _ := oven.WithThirdPartyCaveats(mac.Caveats()...).Cook()
 
 	if mac.Signature() != nmac.Signature() {
 		return errors.New(sigErr) // Faudrait des erreurs
+	}
+
+	err := minter.service.VerifyCaveats(mac.Caveats()...) /// Check the validity of the caveats
+
+	if err != nil {
+		return err
 	}
 
 	return nil

@@ -14,7 +14,7 @@ func TestMintAuthMacaroon(t *testing.T) {
 
 	uid := secretStore.CreateUser()
 
-	minter := auth.NewMinter(&serviceLimiter, &secretStore, mock.NewChallenger())
+	minter := auth.NewMinter(serviceLimiter, &secretStore, mock.NewChallenger())
 
 	t.Log("user_id: ", uid)
 

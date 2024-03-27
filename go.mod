@@ -1,6 +1,6 @@
 module lsat
 
-go 1.19
+go 1.20
 
 require (
 	github.com/lightningnetwork/lnd v0.17.3-beta.rc1

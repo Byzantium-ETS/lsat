@@ -13,7 +13,7 @@ func TestMacaroon(t *testing.T) {
 
 	oven := macaroon.NewOven(secret)
 
-	mac, _ := oven.WithCaveats(caveat).WithService(service).Cook()
+	mac, _ := oven.WithThirdPartyCaveats(caveat).WithService(service).Cook()
 
 	signaturea := mac.Signature()
 
@@ -23,7 +23,7 @@ func TestMacaroon(t *testing.T) {
 
 	oven = macaroon.NewOven(secret)
 
-	mac, _ = oven.WithCaveats(caveat).WithService(service).Cook()
+	mac, _ = oven.WithThirdPartyCaveats(caveat).WithService(service).Cook()
 
 	signatureb := mac.Signature()
 
@@ -37,7 +37,7 @@ func TestMacaroonEncoding(t *testing.T) {
 	root, _ := secretStore.NewSecret(uid)
 
 	oven := macaroon.NewOven(root)
-	oven = oven.WithUserId(uid).WithCaveats(macaroon.NewCaveat("name", "bob")).WithService(macaroon.NewService("rent", 1000))
+	oven = oven.WithUserId(uid).WithThirdPartyCaveats(macaroon.NewCaveat("name", "bob")).WithService(macaroon.NewService("rent", 1000))
 
 	mac, err := oven.Cook()
 
@@ -67,7 +67,7 @@ func TestMacaroonSignature(t *testing.T) {
 	root, _ := secretStore.NewSecret(uid)
 
 	oven := macaroon.NewOven(root)
-	oven = oven.WithUserId(uid).WithCaveats(macaroon.NewCaveat("name", "bob")).WithService(macaroon.NewService("rent", 1000))
+	oven = oven.WithUserId(uid).WithThirdPartyCaveats(macaroon.NewCaveat("name", "bob")).WithService(macaroon.NewService("rent", 1000))
 
 	mac1, err := oven.Cook()
 
@@ -80,7 +80,7 @@ func TestMacaroonSignature(t *testing.T) {
 	root, _ = secretStore.NewSecret(uid)
 
 	oven = macaroon.NewOven(root)
-	oven = oven.WithUserId(uid).WithCaveats(macaroon.NewCaveat("name", "bob")).WithService(macaroon.NewService("rent", 1000))
+	oven = oven.WithUserId(uid).WithThirdPartyCaveats(macaroon.NewCaveat("name", "bob")).WithService(macaroon.NewService("rent", 1000))
 
 	mac2, err := oven.Cook()
 
@@ -98,17 +98,17 @@ func TestMacaroonSignature(t *testing.T) {
 
 }
 
-func TestCaveats(t *testing.T) {
+func TestFirstPartyCaveats(t *testing.T) {
 	uid := secretStore.CreateUser()
 	root, _ := secretStore.NewSecret(uid)
 
 	oven := macaroon.NewOven(root)
-	oven = oven.WithUserId(uid).WithService(macaroon.NewService("rent", 1000)).WithCaveats(macaroon.NewCaveat("name", "bob"))
+	oven = oven.WithUserId(uid).WithService(macaroon.NewService("rent", 1000)).WithThirdPartyCaveats(macaroon.NewCaveat("name", "bob"))
 
 	caveat := macaroon.NewCaveat("color", "red")
 
-	mac1, _ := oven.WithCaveats(caveat).Cook()
-	mac2, _ := oven.WithCaveats(caveat).Cook()
+	mac1, _ := oven.WithFirstPartyCaveats(caveat).Cook()
+	mac2, _ := oven.WithFirstPartyCaveats(caveat).Cook()
 
 	t.Log(mac1.ToJSON())
 	t.Log(mac2.ToJSON())
@@ -123,7 +123,7 @@ func TestThirdPartyCaveats(t *testing.T) {
 	root, _ := secretStore.NewSecret(uid)
 
 	oven := macaroon.NewOven(root)
-	oven = oven.WithUserId(uid).WithService(macaroon.NewService("rent", 1000)).WithCaveats(macaroon.NewCaveat("name", "bob"))
+	oven = oven.WithUserId(uid).WithService(macaroon.NewService("rent", 1000)).WithThirdPartyCaveats(macaroon.NewCaveat("name", "bob"))
 
 	mac, _ := oven.Cook()
 
@@ -131,8 +131,8 @@ func TestThirdPartyCaveats(t *testing.T) {
 
 	thirdPartyCaveat := macaroon.NewCaveat("color", "red")
 
-	macThirdParty, _ := mac.Oven().WithCaveats(thirdPartyCaveat).Cook()
-	macFirstParty, _ := oven.WithCaveats(thirdPartyCaveat).Cook()
+	macThirdParty, _ := mac.Oven().WithThirdPartyCaveats(thirdPartyCaveat).Cook()
+	macFirstParty, _ := oven.WithThirdPartyCaveats(thirdPartyCaveat).Cook()
 
 	t.Log(macFirstParty.ToJSON())
 	t.Log(macThirdParty.ToJSON())
