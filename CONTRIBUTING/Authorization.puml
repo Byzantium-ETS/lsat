@@ -1,0 +1,46 @@
+@startuml
+title L402 : Service authorization flow
+
+hide stereotype
+hide empty members
+hide footbox
+
+actor Client as C
+participant "Client Node" as CNode #B9A898
+participant "Authorization Server" as Auth
+participant "Auth Server Node" as SNode  #B9A898
+participant "Resource Server" as Res #e06666
+
+alt First time user
+  C -> Auth: GET /
+  activate Auth
+    Auth -> Auth: Check token, not found
+    Auth -> SNode: Create invoice
+    activate SNode
+      Auth <-- SNode: Invoice
+    deactivate SNode
+    Auth -> Auth: Mint token + invoice
+    C <-- Auth: 402: Payment Required, token + invoice
+  deactivate Auth
+  C -> CNode: Send payment
+  CNode -> SNode: Send payment
+  activate SNode
+    CNode <-- SNode: Preimage
+  deactivate SNode
+  C <-- CNode: Preimage
+  C -> Auth: GET /, token + preimage
+  activate Auth
+    Auth -> Auth: Check token, validate payment
+    C <-- Auth: Access token
+  deactivate Auth
+
+else User with a token
+  C -> Res: GET /protected, access token
+  activate Res
+    Res -> Res: Check token, validate caveats
+    C <-- Res: Protected
+  deactivate Res
+
+end
+
+@enduml

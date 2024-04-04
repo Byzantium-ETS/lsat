@@ -1,4 +1,4 @@
-package main
+package tests
 
 import (
 	"lsat/auth"
@@ -6,16 +6,15 @@ import (
 	"testing"
 )
 
-var secretStore mock.TestStore = mock.NewTestStore()
-var serviceManager mock.TestServiceManager = mock.TestServiceManager{}
-
 // I should use LndClient for testing here.
 // var challenger mock.TestChallenger = mock.TestChallenger{}
 
-func TestAuthMacaroon(t *testing.T) {
+func TestMintAuthMacaroon(t *testing.T) {
+	serviceLimiter := mock.NewServiceLimiter()
+
 	uid := secretStore.CreateUser()
 
-	minter := auth.NewMinter(&serviceManager, &secretStore, &mock.TestChallenger{})
+	minter := auth.NewMinter(serviceLimiter, &secretStore, mock.NewChallenger())
 
 	t.Log("user_id: ", uid)
 

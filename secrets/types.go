@@ -46,7 +46,7 @@ func NewSecret() Secret {
 func MakeSecret(NewSecret []byte) (Secret, error) {
 	nhlen := len(NewSecret)
 	if nhlen != SecretSize {
-		return Secret{}, fmt.Errorf("invalid user_id length of %v, want %v",
+		return Secret{}, fmt.Errorf("invalid secret length of %v, want %v",
 			nhlen, SecretSize)
 	}
 

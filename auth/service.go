@@ -14,7 +14,13 @@ type ServiceLimiter interface {
 	// It returns a list of caveats representing the capabilities of the services.
 	Capabilities(context.Context, ...macaroon.Service) ([]macaroon.Caveat, error)
 
-	// VerifyCaveats verifies the validity of a set of macaroon caveats.
-	// It returns an error if any of the caveats are invalid or do not meet the specified criteria.
-	VerifyCaveats(...macaroon.Caveat) error
+	// VerifyCaveats checks the validity of the provided caveats.
+	VerifyCaveats(caveats ...macaroon.Caveat) error
+
+	// Sign apply a seal on the macaroon that is used to determined if it was authenticated.
+	//
+	// The signature must be encoded in hexadecimal.
+	//
+	// TO-DO: Define a spec the service can use to sign the token.
+	// Sign(macaroon.Macaroon) (macaroon.Macaroon, error)
 }

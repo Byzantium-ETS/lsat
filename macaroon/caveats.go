@@ -1,6 +1,10 @@
 package macaroon
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
 
 // Caveat represents a condition or restriction associated with a macaroon.
 type Caveat struct {
@@ -12,6 +16,22 @@ func NewCaveat(Key string, Value string) Caveat {
 	return Caveat{Key, Value}
 }
 
-func (c Caveat) String() string {
-	return fmt.Sprintf("%s = %s", c.Key, c.Value)
+func (caveat Caveat) String() string {
+	return fmt.Sprintf("%s = %s", caveat.Key, caveat.Value)
+}
+
+func (caveat *Caveat) MarshalJSON() ([]byte, error) {
+	return json.Marshal(caveat.String())
+}
+
+func (caveat *Caveat) UnmarshalJSON(data []byte) error {
+	// fmt.Println(string(data))
+	parts := strings.Split(string(data), " = ")
+
+	key := parts[0][1:len(parts[0])]
+	value := parts[1][:len(parts[1])-1]
+
+	*caveat = NewCaveat(key, value)
+
+	return nil
 }

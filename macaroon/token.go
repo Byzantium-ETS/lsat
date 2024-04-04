@@ -65,7 +65,7 @@ func (token PreToken) String() string {
 	macaroonBase64 := token.Macaroon.String()
 
 	// Encode the Invoice
-	invoice := token.PaymentRequest.PaymentRequest
+	invoice := token.PaymentRequest.GetPaymentRequest()
 
 	// Combine the encoded Macaroon(s) and encoded Preimage as <macaroon(s)>:<preimage>
 	encodedToken := fmt.Sprintf("%s:%s", macaroonBase64, invoice)
