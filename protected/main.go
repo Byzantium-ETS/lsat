@@ -59,9 +59,6 @@ func (h *Handler) handleProtected(w http.ResponseWriter, r *http.Request) {
 	// Parse the Authorization header
 	parts := strings.Split(authHeader, " ")
 
-	fmt.Println(authHeader)
-	fmt.Println(parts)
-
 	credentials := strings.Split(parts[1], ":")
 
 	Macaroon, _ := macaroon.DecodeBase64(credentials[0])
