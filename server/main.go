@@ -19,8 +19,8 @@ type Handler struct {
 }
 
 const (
-	address          = "localhost:8080"
-	protectedAddress = "http://localhost:8443"
+	host         = "localhost:8080"
+	protectedURL = "http://localhost:8443"
 
 	macaroonHeader    = "L402"
 	catService        = mock.CatService
@@ -42,17 +42,17 @@ func main() {
 
 	go handle.shareSecret()
 
-	fmt.Println("Server launched at", address)
+	fmt.Println("Server launched at", host)
 	http.HandleFunc("/", handle.handleAuthorization)
 	http.HandleFunc("/protected", handle.handleProtected)
-	err := http.ListenAndServe(address, nil)
+	err := http.ListenAndServe(host, nil)
 	fmt.Println(err)
 }
 
 func (h *Handler) shareSecret() error {
 	root := secretStore.GetRoot()
 
-	req, err := http.NewRequest("POST", protectedAddress, bytes.NewReader(root[:]))
+	req, err := http.NewRequest("POST", protectedURL, bytes.NewReader(root[:]))
 	if err != nil {
 		return errors.New("Error creating request: " + err.Error())
 	}
@@ -86,14 +86,15 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 		pretoken, err := h.Minter.MintToken(uid, catService)
 
 		if err != nil {
-			fmt.Println(err)
+			w.WriteHeader(http.StatusBadGateway)
+			fmt.Fprintf(w, "%s", err)
 			return
 		}
 
 		macaroon := pretoken.Macaroon
 
 		// Format Macaroon and invoice in WWW-Authenticate header
-		authHeader := fmt.Sprintf("%s macaroon=\"%s\", invoice=\"%s\"", macaroonHeader, macaroon, pretoken.PaymentRequest.GetPaymentRequest())
+		authHeader := fmt.Sprintf("%s macaroon=\"%s\", invoice=\"%s\"", macaroonHeader, macaroon, pretoken.InvoiceResponse.Invoice)
 
 		// Set the WWW-Authenticate header
 		w.Header().Set("WWW-Authenticate", authHeader)
@@ -129,7 +130,7 @@ func (h *Handler) handleProtected(w http.ResponseWriter, r *http.Request) {
 
 	if err == nil {
 		// The request is redirected to the server with the protected ressource.
-		http.RedirectHandler(protectedAddress+"/protected", http.StatusTemporaryRedirect).ServeHTTP(w, r)
+		http.RedirectHandler(protectedURL+"/protected", http.StatusTemporaryRedirect).ServeHTTP(w, r)
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprintf(w, "%s", err)

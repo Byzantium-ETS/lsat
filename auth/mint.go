@@ -55,7 +55,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 	}
 
 	// Set the PaymentRequest in the pre-token based on the result of the payment challenge.
-	token.PaymentRequest = result.PaymentRequest
+	token.InvoiceResponse = result.InvoiceResponse
 
 	// Retrieve the capabilities (caveats) associated with the requested services.
 	caveats, err := minter.service.Capabilities(context.Background(), services...)

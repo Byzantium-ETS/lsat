@@ -4,7 +4,6 @@ import (
 	"lsat/challenge"
 	"lsat/secrets"
 
-	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 )
 
@@ -17,5 +16,5 @@ func NewChallenger() challenge.Challenger {
 // The invoice will be the preimage for testing purposes.
 func (*testChallenger) Challenge(price uint64) (challenge.ChallengeResult, error) {
 	preimage := lntypes.Preimage(secrets.NewSecret())
-	return challenge.ChallengeResult{Preimage: preimage, PaymentRequest: lnrpc.AddInvoiceResponse{PaymentRequest: preimage.String()}}, nil
+	return challenge.ChallengeResult{Preimage: preimage, InvoiceResponse: challenge.InvoiceResponse{Invoice: preimage.String()}}, nil
 }

@@ -7,7 +7,6 @@ import (
 	"lsat/challenge"
 	"lsat/secrets"
 
-	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 )
 
@@ -19,8 +18,8 @@ const (
 //
 // It holds the macaroon and its secret.
 type Token struct {
-	Macaroon Macaroon         // The macaroon.
-	Preimage lntypes.Preimage // The secret of the transaction.
+	Macaroon         // The macaroon.
+	lntypes.Preimage // The secret of the transaction.
 }
 
 func (token Token) String() string {
@@ -42,8 +41,8 @@ func (token Token) String() string {
 //
 // This object is sent when the Macaroon is minted.
 type PreToken struct {
-	Macaroon       Macaroon                 // The macaroon.
-	PaymentRequest lnrpc.AddInvoiceResponse // The invoice sent to the user.
+	Macaroon                  // The macaroon.
+	challenge.InvoiceResponse // The invoice sent to the user.
 }
 
 // Pay a token.
@@ -51,10 +50,10 @@ type PreToken struct {
 // This creates a valid Token.
 func (token PreToken) Pay(node challenge.LightningNode) (Token, error) {
 	cx := context.Background()
-	cx = context.WithValue(cx, "macaroon", token.Macaroon) // Enrich the context with a macaroon
-	preimage, err := node.SendPayment(cx, token.PaymentRequest)
+	// cx = context.WithValue(cx, "macaroon", token.Macaroon) // Enrich the context with a macaroon
+	response, err := node.PayInvoice(cx, challenge.PayInvoiceRequest{Invoice: token.InvoiceResponse.Invoice})
 	if err != nil {
-		return Token{Macaroon: token.Macaroon, Preimage: preimage}, nil
+		return Token{Macaroon: token.Macaroon, Preimage: response.Preimage}, nil
 	} else {
 		return Token{}, err
 	}
@@ -65,7 +64,7 @@ func (token PreToken) String() string {
 	macaroonBase64 := token.Macaroon.String()
 
 	// Encode the Invoice
-	invoice := token.PaymentRequest.GetPaymentRequest()
+	invoice := token.InvoiceResponse.Invoice
 
 	// Combine the encoded Macaroon(s) and encoded Preimage as <macaroon(s)>:<preimage>
 	encodedToken := fmt.Sprintf("%s:%s", macaroonBase64, invoice)
@@ -76,14 +75,14 @@ func (token PreToken) String() string {
 // A key used to identify macaroons in the database.
 type TokenID struct {
 	version Version
-	user_id secrets.UserId // The id of the token owner
+	userId  secrets.UserId // The id of the token owner
 	hash    lntypes.Hash   // The hash of the preimage of the transaction
 }
 
 func (token Token) Id() TokenID {
 	return TokenID{
 		version: BaseVersion,
-		user_id: token.Macaroon.UserId(),
+		userId:  token.Macaroon.UserId(),
 		hash:    lntypes.Hash(token.Preimage),
 	}
 }

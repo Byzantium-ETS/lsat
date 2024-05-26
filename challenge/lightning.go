@@ -3,18 +3,38 @@ package challenge
 import (
 	"context"
 
-	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 )
 
-type InvoiceBuilder = lnrpc.Invoice            /// A type used to build an Invoice.
-type PaymentRequest = lnrpc.AddInvoiceResponse /// A BOLT11 invoice.
+type CreateInvoiceRequest struct {
+	Description     string
+	DescriptionHash lntypes.Hash
+	Amount          uint64
+	Udata           any
+}
 
-// LightningNode defines the interface for a Lightning Network node.
+type PayInvoiceRequest struct {
+	Amount  uint64
+	Invoice string
+}
+
+type InvoiceResponse struct {
+	Preimage    lntypes.Preimage
+	PaymentHash lntypes.Hash
+	Invoice     string
+}
+
+type PayInvoiceResponse struct {
+	PaymentId   string
+	Preimage    lntypes.Preimage
+	PaymentHash lntypes.Hash
+}
+
+// A Lightning Network node.
 type LightningNode interface {
-	// SendPayment sends a payment using the Lightning Network.
-	SendPayment(context.Context, PaymentRequest) (lntypes.Preimage, error)
+	// PayInvoice sends a payment using the Lightning Network.
+	PayInvoice(context.Context, PayInvoiceRequest) (PayInvoiceResponse, error)
 
 	// CreateInvoice creates an invoice for receiving payments on the Lightning Network.
-	CreateInvoice(context.Context, InvoiceBuilder) (PaymentRequest, error)
+	CreateInvoice(context.Context, CreateInvoiceRequest) (InvoiceResponse, error)
 }
