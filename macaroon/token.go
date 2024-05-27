@@ -18,8 +18,8 @@ const (
 //
 // It holds the macaroon and its secret.
 type Token struct {
-	Macaroon         // The macaroon.
-	lntypes.Preimage // The secret of the transaction.
+	Macaroon Macaroon         // The macaroon.
+	Preimage lntypes.Preimage // The secret of the transaction.
 }
 
 func (token Token) String() string {
@@ -41,8 +41,8 @@ func (token Token) String() string {
 //
 // This object is sent when the Macaroon is minted.
 type PreToken struct {
-	Macaroon                  // The macaroon.
-	challenge.InvoiceResponse // The invoice sent to the user.
+	Macaroon        Macaroon                  // The macaroon.
+	InvoiceResponse challenge.InvoiceResponse // The invoice sent to the user.
 }
 
 // Pay a token.

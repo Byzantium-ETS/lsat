@@ -25,7 +25,6 @@ func (caveat *Caveat) MarshalJSON() ([]byte, error) {
 }
 
 func (caveat *Caveat) UnmarshalJSON(data []byte) error {
-	// fmt.Println(string(data))
 	parts := strings.Split(string(data), " = ")
 
 	key := parts[0][1:len(parts[0])]
