@@ -206,7 +206,7 @@ func (c *PhoenixClient) GetIncomingPayment(paymentHash string) (*Payment, error)
 	if err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	httpReq.Header.Set("Authorization", c.createAuthHeader())
 
 	resp, err := c.HTTPClient.Do(httpReq)
@@ -240,7 +240,7 @@ func (c *PhoenixClient) GetInfo() (*NodeInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	httpReq.Header.Set("Authorization", c.createAuthHeader())
 
 	resp, err := c.HTTPClient.Do(httpReq)

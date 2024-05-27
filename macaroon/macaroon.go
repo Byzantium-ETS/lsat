@@ -67,17 +67,17 @@ func (mac *Macaroon) Oven() Oven {
 
 // MacaroonJSON struct is used for JSON encoding/decoding of macaroon.
 type MacaroonJSON struct {
-	Uid     string   `json:"user_id"`
-	Caveats []Caveat `json:"caveats"`
-	Sig     string   `json:"signature"`
+	UserId    string   `json:"user_id"`
+	Caveats   []Caveat `json:"caveats"`
+	Signature string   `json:"signature"`
 }
 
 // ToJSON converts Macaroon to macaroonJSON.
 func (mac *Macaroon) ToJSON() MacaroonJSON {
 	return MacaroonJSON{
-		Uid:     mac.userId.String(),
-		Caveats: mac.caveats,
-		Sig:     mac.Signature().String(),
+		UserId:    mac.userId.String(),
+		Caveats:   mac.caveats,
+		Signature: mac.Signature().String(),
 	}
 }
 
@@ -122,8 +122,8 @@ func DecodeBase64(encodedString string) (Macaroon, error) {
 	}
 
 	// Convert the hex-encoded UID and signature to their respective types
-	uid, _ := hex.DecodeString(macJSON.Uid)
-	sig, _ := hex.DecodeString(macJSON.Sig)
+	uid, _ := hex.DecodeString(macJSON.UserId)
+	sig, _ := hex.DecodeString(macJSON.Signature)
 
 	// Create lntypes.Hash and secrets.UserId from the decoded values
 	sigHash, _ := lntypes.MakeHash(sig)
