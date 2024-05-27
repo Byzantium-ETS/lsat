@@ -14,14 +14,14 @@ type Version = int8
 
 // Macaroon struct represents an LSAT (Lightning Service Authentication Token) macaroon.
 type Macaroon struct {
-	user_id   secrets.UserId
+	userId    secrets.UserId
 	caveats   []Caveat
 	signature lntypes.Hash
 }
 
 // Uid returns the user ID associated with the macaroon.
 func (mac *Macaroon) UserId() secrets.UserId {
-	return mac.user_id
+	return mac.userId
 }
 
 // Services extracts service names from the Macaroon's caveats.
@@ -55,29 +55,29 @@ func (mac Macaroon) String() string {
 
 // Create an oven from a Macaroon.
 //
-// This is used when adding third party caveats.
+// This is used for adding third party caveats.
 func (mac *Macaroon) Oven() Oven {
 	root, _ := secrets.MakeSecret(mac.signature[:])
 	return Oven{
 		root:     root,
-		user_id:  mac.user_id,
+		userId:   mac.userId,
 		macaroon: mac,
 	}
 }
 
 // MacaroonJSON struct is used for JSON encoding/decoding of macaroon.
 type MacaroonJSON struct {
-	Uid     string   `json:"user_id"`
-	Caveats []Caveat `json:"caveats"`
-	Sig     string   `json:"signature"`
+	UserId    string   `json:"user_id"`
+	Caveats   []Caveat `json:"caveats"`
+	Signature string   `json:"signature"`
 }
 
 // ToJSON converts Macaroon to macaroonJSON.
 func (mac *Macaroon) ToJSON() MacaroonJSON {
 	return MacaroonJSON{
-		Uid:     mac.user_id.String(),
-		Caveats: mac.caveats,
-		Sig:     mac.Signature().String(),
+		UserId:    mac.userId.String(),
+		Caveats:   mac.caveats,
+		Signature: mac.Signature().String(),
 	}
 }
 
@@ -122,8 +122,8 @@ func DecodeBase64(encodedString string) (Macaroon, error) {
 	}
 
 	// Convert the hex-encoded UID and signature to their respective types
-	uid, _ := hex.DecodeString(macJSON.Uid)
-	sig, _ := hex.DecodeString(macJSON.Sig)
+	uid, _ := hex.DecodeString(macJSON.UserId)
+	sig, _ := hex.DecodeString(macJSON.Signature)
 
 	// Create lntypes.Hash and secrets.UserId from the decoded values
 	sigHash, _ := lntypes.MakeHash(sig)
@@ -131,7 +131,7 @@ func DecodeBase64(encodedString string) (Macaroon, error) {
 
 	// Create a Macaroon struct
 	mac := Macaroon{
-		user_id:   uidHash,
+		userId:    uidHash,
 		caveats:   macJSON.Caveats,
 		signature: sigHash,
 	}

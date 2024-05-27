@@ -14,14 +14,14 @@ type Secret [SecretSize]byte
 // UserId is a fixed-size byte array representing a user identifier.
 type UserId [SecretSize]byte
 
+// NewUserId generates a new random UserId.
 func NewUserId() UserId {
 	var uid UserId
-
-	rand.Read(uid[:])
-
+	rand.Read(uid[:]) // Fill the byte array with random data.
 	return uid
 }
 
+// MakeUserId creates a UserId from the provided byte slice.
 func MakeUserId(newUserId []byte) (UserId, error) {
 	nhlen := len(newUserId)
 	if nhlen != SecretSize {
@@ -30,30 +30,30 @@ func MakeUserId(newUserId []byte) (UserId, error) {
 	}
 
 	var uid UserId
-	copy(uid[:], newUserId)
+	copy(uid[:], newUserId) // Copy the provided slice into the UserId byte array.
 
 	return uid, nil
 }
 
+// NewSecret generates a new random Secret.
 func NewSecret() Secret {
 	var secret Secret
-
-	rand.Read(secret[:])
-
+	rand.Read(secret[:]) // Fill the byte array with random data.
 	return secret
 }
 
-func MakeSecret(NewSecret []byte) (Secret, error) {
-	nhlen := len(NewSecret)
+// MakeSecret creates a Secret from the provided byte slice.
+func MakeSecret(newSecret []byte) (Secret, error) {
+	nhlen := len(newSecret)
 	if nhlen != SecretSize {
 		return Secret{}, fmt.Errorf("invalid secret length of %v, want %v",
 			nhlen, SecretSize)
 	}
 
-	var secret UserId
-	copy(secret[:], NewSecret)
+	var secret Secret
+	copy(secret[:], newSecret) // Copy the provided slice into the Secret byte array.
 
-	return Secret(secret), nil
+	return secret, nil
 }
 
 func (u UserId) String() string {

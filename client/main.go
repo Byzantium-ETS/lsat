@@ -11,11 +11,10 @@ import (
 )
 
 const (
-	authAddress = "http://localhost:8080"
+	authURL = "http://localhost:8080"
 )
 
-type TestClient struct {
-}
+type TestClient struct{}
 
 func main() {
 	client := TestClient{}
@@ -63,7 +62,7 @@ func (c *TestClient) sendTokenRequest() {
 	fmt.Println("Requesting Token...")
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", authAddress, nil)
+	req, err := http.NewRequest("GET", authURL, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return
@@ -99,10 +98,11 @@ func (c *TestClient) sendTokenRequest() {
 
 			fmt.Println(token.Macaroon.ToJSON())
 
-			c.sendAuthorizationRequest(authAddress, token)
+			c.sendAuthorizationRequest(authURL, token)
 		}
 	} else {
-		fmt.Println("Unexpected response status:", resp.Status)
+		err, _ := io.ReadAll(resp.Body)
+		fmt.Println("Unexpected response status:", resp.Status, "->", string(err))
 	}
 }
 

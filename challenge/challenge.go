@@ -3,7 +3,6 @@ package challenge
 import (
 	"context"
 	"lsat/secrets"
-	"time"
 
 	"github.com/lightningnetwork/lnd/lntypes"
 )
@@ -25,10 +24,10 @@ type ChallengeResult struct {
 	// Preimage is the randomly generated secret that serves as the proof of payment.
 	lntypes.Preimage
 
-	// PaymentRequest is the Lightning Network invoice associated with the payment
+	// InvoiceResponse is the Lightning Network invoice associated with the payment
 	// challenge. Clients use this payment request to fulfill the challenge by making
 	// a payment to the Lightning node.
-	PaymentRequest
+	InvoiceResponse
 }
 
 // Challenge generates a payment challenge for the specified price by creating
@@ -47,13 +46,9 @@ func (challenger *ChallengeFactory) Challenge(price uint64) (ChallengeResult, er
 	Preimage, _ := lntypes.MakePreimage(secret[:])
 
 	// Build an invoice with the generated preimage, price, and other details.
-	invoice := InvoiceBuilder{
-		RPreimage: Preimage[:],
-		Value:     int64(price),
-		Expiry:    int64(time.Hour), // The time could change in the future.
-		IsKeysend: false,
-		Memo:      "L402", // Ideally, we would have the service name.
-		Private:   false,  // Not sure yet.
+	invoice := CreateInvoiceRequest{
+		Amount:      uint64(price),
+		Description: "L402", // Ideally, we would have the service name.
 	}
 
 	// Create a Lightning invoice using the built parameters.

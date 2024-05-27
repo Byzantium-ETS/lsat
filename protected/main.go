@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	address           = "localhost:8443"
-	authFailedMessage = "Authentication failed!"
+	host              = "localhost:8443"
+	authFailedMessage = "You do not have access to that service!"
 )
 
 var serviceLimiter = mock.NewServiceLimiter()
@@ -25,10 +25,10 @@ type Handler struct {
 
 func main() {
 	handler := Handler{}
-	fmt.Println("Server launched at", address)
+	fmt.Println("Server launched at", host)
 	http.HandleFunc("/", handler.handleSecret)
 	http.HandleFunc("/protected", handler.handleProtected)
-	err := http.ListenAndServe(address, nil)
+	err := http.ListenAndServe(host, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
@@ -58,9 +58,6 @@ func (h *Handler) handleProtected(w http.ResponseWriter, r *http.Request) {
 	// Check if Authorization header is present
 	// Parse the Authorization header
 	parts := strings.Split(authHeader, " ")
-
-	fmt.Println(authHeader)
-	fmt.Println(parts)
 
 	credentials := strings.Split(parts[1], ":")
 

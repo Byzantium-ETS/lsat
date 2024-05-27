@@ -41,17 +41,9 @@ func TestPaymentRequest(t *testing.T) {
 
 	result, _ := challenger.Challenge(0)
 
-	t.Log(result.GetPaymentRequest())
+	t.Log(result.Invoice)
 
-	if result.Preimage.String() != result.GetPaymentRequest() {
+	if result.Preimage.String() != result.Invoice {
 		t.Error("the test challenger should produce an invoice identical to the preimage!")
 	}
-}
-
-func TestInvoice(t *testing.T) {
-	t.Error("Unimplemented!")
-}
-
-func TestConnection(t *testing.T) {
-	t.Error("Unimplemented!")
 }

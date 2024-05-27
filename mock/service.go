@@ -67,9 +67,9 @@ func (s *testServiceLimiter) Services(cx context.Context, names ...string) ([]Se
 	for _, name := range names {
 		switch name {
 		case CatService:
-			list = append(list, NewService(CatService, 1000))
+			list = append(list, NewService(CatService, 0))
 		case DogService:
-			list = append(list, NewService(DogService, 2000))
+			list = append(list, NewService(DogService, 0))
 		default:
 			return []Service{}, errors.New("unkown service")
 		}
