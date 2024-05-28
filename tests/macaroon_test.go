@@ -7,7 +7,7 @@ import (
 )
 
 func TestMacaroon(t *testing.T) {
-	uid := secretStore.CreateUser()
+	uid := secretStore.NewUser()
 
 	secret, _ := secretStore.NewSecret(uid)
 
@@ -17,7 +17,7 @@ func TestMacaroon(t *testing.T) {
 
 	signaturea := mac.Signature()
 
-	uid = secretStore.CreateUser()
+	uid = secretStore.NewUser()
 
 	secret, _ = secretStore.NewSecret(uid)
 
@@ -33,7 +33,7 @@ func TestMacaroon(t *testing.T) {
 }
 
 func TestMacaroonEncoding(t *testing.T) {
-	uid := secretStore.CreateUser()
+	uid := secretStore.NewUser()
 	root, _ := secretStore.NewSecret(uid)
 
 	oven := macaroon.NewOven(root)
@@ -63,7 +63,7 @@ func TestMacaroonEncoding(t *testing.T) {
 }
 
 func TestMacaroonSignature(t *testing.T) {
-	uid := secretStore.CreateUser()
+	uid := secretStore.NewUser()
 	root, _ := secretStore.NewSecret(uid)
 
 	oven := macaroon.NewOven(root)
@@ -76,7 +76,7 @@ func TestMacaroonSignature(t *testing.T) {
 		return
 	}
 
-	uid = secretStore.CreateUser()
+	uid = secretStore.NewUser()
 	root, _ = secretStore.NewSecret(uid)
 
 	oven = macaroon.NewOven(root)
@@ -99,7 +99,7 @@ func TestMacaroonSignature(t *testing.T) {
 }
 
 func TestFirstPartyCaveats(t *testing.T) {
-	uid := secretStore.CreateUser()
+	uid := secretStore.NewUser()
 	root, _ := secretStore.NewSecret(uid)
 
 	oven := macaroon.NewOven(root)
@@ -119,7 +119,7 @@ func TestFirstPartyCaveats(t *testing.T) {
 }
 
 func TestThirdPartyCaveats(t *testing.T) {
-	uid := secretStore.CreateUser()
+	uid := secretStore.NewUser()
 	root, _ := secretStore.NewSecret(uid)
 
 	oven := macaroon.NewOven(root)

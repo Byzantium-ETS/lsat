@@ -1,55 +1,73 @@
 package tests
 
 import (
-	"lsat/mock"
+	"lsat/auth"
+	"lsat/macaroon"
 	"lsat/secrets"
+	"os"
 	"testing"
+
+	"github.com/lightningnetwork/lnd/lntypes"
 )
 
-var secretStore mock.TestStore = mock.NewTestStore()
-
-func TestMakeSecret(t *testing.T) {
-	root := secrets.NewSecret()
-
-	t.Log(len(root[:]))
-	t.Log(root)
-
-	newRoot, err := secrets.MakeSecret(root[:])
+func TestStoreToken(t *testing.T) {
+	store, err := auth.NewStore("../.store")
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	if newRoot != root {
-		t.Log("both secrets should be equal")
+	secret := secrets.NewSecret()
+	preimage, _ := lntypes.MakePreimage(secret[:])
+
+	token := macaroon.Token{
+		Macaroon: macaroon.Macaroon{},
+		Preimage: preimage,
 	}
 
-}
+	id := token.Id()
 
-func TestSecret(t *testing.T) {
-	uid := secretStore.CreateUser()
-
-	asecret, err := secretStore.NewSecret(uid)
+	err = store.StoreToken(id, token)
 
 	if err != nil {
-		t.Error("Secret not found in the Store.")
+		t.Error(err)
 	}
 
-	bsecret, _ := secretStore.GetSecret(uid)
-
-	if asecret != bsecret {
-		t.Error("Mismatch between the secret from the same user.")
-	}
+	os.Remove(store.FilePath(id))
 }
 
-func TestUid(t *testing.T) {
-	store := mock.NewTestStore()
+func TestGetToken(t *testing.T) {
+	store, err := auth.NewStore("../.store")
 
-	userA := store.CreateUser()
-
-	userB := store.CreateUser()
-
-	if userA == userB {
-		t.Error("Two users cannot have the same id.")
+	if err != nil {
+		t.Error(err)
 	}
+
+	secret := secrets.NewSecret()
+	preimage, _ := lntypes.MakePreimage(secret[:])
+
+	tokenIn := macaroon.Token{
+		Macaroon: macaroon.Macaroon{},
+		Preimage: preimage,
+	}
+
+	t.Log(tokenIn)
+
+	id := tokenIn.Id()
+
+	_ = store.StoreToken(id, tokenIn)
+
+	tokenOut, err := store.GetToken(id)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	t.Log(tokenOut)
+
+	if tokenIn.String() != tokenOut.String() {
+		t.Error("The token should be identical!")
+	}
+
+	os.Remove(store.FilePath(id))
 }

@@ -1,62 +1,35 @@
 package mock
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
+	"errors"
+	"lsat/auth"
 	"lsat/macaroon"
-	. "lsat/secrets"
 )
 
-// TestStore represents a mock store for tokens and secrets.
+// LocalStore implements the TokenStore interface using local file storage.
 type TestStore struct {
-	root   Secret
 	tokens map[macaroon.TokenID]macaroon.Token
 }
 
-func NewTestStore() TestStore {
-	return TestStore{
-		root:   NewSecret(),
+func NewStore() auth.TokenStore {
+	return &TestStore{
 		tokens: make(map[macaroon.TokenID]macaroon.Token),
 	}
 }
 
-func NewTestStoreFromSecret(secret Secret) TestStore {
-	return TestStore{
-		root:   secret,
-		tokens: make(map[macaroon.TokenID]macaroon.Token),
-	}
-}
-
-// Creates a new user ID.
-func (store *TestStore) CreateUser() UserId {
-	return NewUserId()
-}
-
-func (store *TestStore) GetRoot() Secret {
-	return store.root
-}
-
-func (store *TestStore) GetSecret(uid UserId) (Secret, error) {
-	root := hmac.New(sha256.New, store.root[:])
-
-	_, err := root.Write(uid[:])
-
-	if err != nil {
-		return Secret{}, err
-	}
-
-	return Secret(root.Sum(nil)), nil
-}
-
-func (store *TestStore) NewSecret(uid UserId) (Secret, error) {
-	return store.GetSecret(uid)
-}
-
-func (store *TestStore) StoreToken(id macaroon.TokenID, token macaroon.Token) error {
-	store.tokens[id] = token
+// StoreToken saves the token to a file at folderPath/baseFileName+id.Hash.
+func (store *TestStore) StoreToken(id macaroon.TokenID, mac macaroon.Token) error {
+	store.tokens[id] = mac
 	return nil
 }
 
-func (store *TestStore) Tokens() *map[macaroon.TokenID]macaroon.Token {
-	return &store.tokens
+// GetToken reads the token from a file where it should be saved, unmarshals it, and returns the token object.
+func (store *TestStore) GetToken(id macaroon.TokenID) (*macaroon.Token, error) {
+	token, ok := store.tokens[id]
+
+	if ok == false {
+		return nil, errors.New("could not find the token!")
+	}
+
+	return &token, nil
 }

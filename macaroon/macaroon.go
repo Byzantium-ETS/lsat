@@ -4,9 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"lsat/secrets"
 
 	"github.com/lightningnetwork/lnd/lntypes"
+)
+
+const (
+	valueErr = "no caveat found with given key"
 )
 
 // Version is an alias for the Macaroon version.
@@ -37,6 +42,17 @@ func (mac *Macaroon) Caveats() []Caveat {
 // Signature returns the signature of the macaroon.
 func (mac *Macaroon) Signature() lntypes.Hash {
 	return mac.signature
+}
+
+// Returns the Value of the caveat with the given Key
+func (mac *Macaroon) GetValue(key string) (string, error) {
+	for _, caveat := range mac.caveats {
+		if caveat.Key == key {
+			return caveat.Value, nil
+		}
+	}
+
+	return "", errors.New(valueErr)
 }
 
 func (mac Macaroon) String() string {

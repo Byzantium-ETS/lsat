@@ -14,7 +14,11 @@ func NewChallenger() challenge.Challenger {
 }
 
 // The invoice will be the preimage for testing purposes.
-func (*testChallenger) Challenge(price uint64) (challenge.ChallengeResult, error) {
+func (*testChallenger) Challenge(price uint64) (challenge.InvoiceResponse, error) {
 	preimage := lntypes.Preimage(secrets.NewSecret())
-	return challenge.ChallengeResult{Preimage: preimage, InvoiceResponse: challenge.InvoiceResponse{Invoice: preimage.String()}}, nil
+	return challenge.InvoiceResponse{
+		Invoice:     preimage.String(),
+		Preimage:    preimage,
+		PaymentHash: preimage.Hash(),
+	}, nil
 }

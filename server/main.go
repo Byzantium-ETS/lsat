@@ -29,7 +29,7 @@ const (
 
 var (
 	serviceLimiter = mock.NewServiceLimiter()
-	secretStore    = mock.NewTestStore()
+	secretStore    = secrets.NewSecretFactory()
 	challenger     = mock.NewChallenger()
 )
 
