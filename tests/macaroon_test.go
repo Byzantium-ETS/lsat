@@ -2,8 +2,9 @@ package tests
 
 import (
 	"lsat/macaroon"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSignature(t *testing.T) {
@@ -56,10 +57,9 @@ func TestMacaroonEncoding(t *testing.T) {
 
 	if err != nil {
 		t.Error(err)
-	} else if !reflect.DeepEqual(decodedMac, mac) {
-		t.Log(decodedMac.ToJSON())
-		t.Error("Failed to decode macaroon!")
 	}
+
+	assert.Equal(t, mac, decodedMac)
 }
 
 func TestMacaroonSignature(t *testing.T) {
@@ -92,10 +92,7 @@ func TestMacaroonSignature(t *testing.T) {
 	t.Log(mac1)
 	t.Log(mac2)
 
-	if mac1.Signature() == mac2.Signature() {
-		t.Error("The hex encoding cannot be similar!")
-	}
-
+	assert.NotEqual(t, mac1.Signature(), mac2.Signature())
 }
 
 func TestFirstPartyCaveats(t *testing.T) {
@@ -111,9 +108,7 @@ func TestFirstPartyCaveats(t *testing.T) {
 	t.Log(mac1.ToJSON())
 	t.Log(mac2.ToJSON())
 
-	if !reflect.DeepEqual(mac1, mac2) {
-		t.Error("Both macaroons should have the same signature!")
-	}
+	assert.Equal(t, mac1, mac2)
 }
 
 func TestThirdPartyCaveats(t *testing.T) {
@@ -135,7 +130,5 @@ func TestThirdPartyCaveats(t *testing.T) {
 	t.Log(macFirstParty.ToJSON())
 	t.Log(macThirdParty.ToJSON())
 
-	if !reflect.DeepEqual(macFirstParty, macThirdParty) {
-		t.Error("Both macaroons should have the same signature!")
-	}
+	assert.Equal(t, macFirstParty, macThirdParty)
 }

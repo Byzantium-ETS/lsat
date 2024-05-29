@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"lsat/macaroon"
@@ -16,7 +15,7 @@ const (
 // An interface defining methods for managing services and their capabilities.
 type ServiceManager interface {
 	// Services retrieves information about services with the provided names.
-	Service(context.Context, string) (macaroon.Service, error)
+	Service(string) (macaroon.Service, error)
 
 	// VerifyCaveats checks the validity of the provided caveats.
 	VerifyCaveats(caveats ...macaroon.Caveat) error
@@ -31,13 +30,13 @@ type Config struct {
 func NewServiceManager(services []macaroon.Service) *Config {
 	serviceMap := make(map[string]macaroon.Service)
 	for _, service := range services {
-		serviceMap[service.Name] = service
+		serviceMap[service.Id().String()] = service
 	}
 	return &Config{services: serviceMap}
 }
 
 // Service retrieves information about a service with the provided name.
-func (sm *Config) Service(ctx context.Context, name string) (macaroon.Service, error) {
+func (sm *Config) Service(name string) (macaroon.Service, error) {
 	service, exists := sm.services[name]
 	if !exists {
 		return macaroon.Service{}, fmt.Errorf("service not found: %s", name)

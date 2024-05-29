@@ -18,13 +18,13 @@ func TestMintAuthMacaroon(t *testing.T) {
 
 	minter := auth.NewMinter(serviceLimiter, &secretStore, mock.NewChallenger())
 
-	preToken, err := minter.MintToken(uid, serviceName)
-
-	t.Log(preToken.Macaroon.ToJSON())
+	preToken, err := minter.MintToken(uid, serviceName+":0")
 
 	if err != nil {
 		t.Error(err)
 	}
+
+	t.Log(preToken.Macaroon.ToJSON())
 
 	err = minter.AuthMacaroon(&preToken.Macaroon)
 
@@ -42,7 +42,7 @@ func TestMintAuthToken(t *testing.T) {
 
 	minter := auth.NewMinter(serviceLimiter, &secretStore, mock.NewChallenger())
 
-	preToken, err := minter.MintToken(uid, serviceName)
+	preToken, err := minter.MintToken(uid, serviceName+":0")
 
 	if err != nil {
 		t.Error(err)

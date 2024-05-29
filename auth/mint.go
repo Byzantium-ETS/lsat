@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"errors"
 	"lsat/challenge"
 	"lsat/macaroon"
@@ -43,7 +42,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_name string) (macaro
 	token := macaroon.PreToken{}
 
 	// Fetch information about the requested services.
-	service, err := minter.service.Service(context.Background(), service_name)
+	service, err := minter.service.Service(service_name)
 	if err != nil {
 		return token, err
 	}

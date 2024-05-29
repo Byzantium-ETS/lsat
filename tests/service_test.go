@@ -6,6 +6,8 @@ import (
 	"lsat/mock"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -17,7 +19,7 @@ var service macaroon.Service = macaroon.NewService("image", 1000)
 
 var caveat macaroon.Caveat = macaroon.NewCaveat("expiry", "12:00 PM")
 
-func TestServiceAuthMacaroon(t *testing.T) {
+func TestVerifyCaveats(t *testing.T) {
 	serviceLimiter := auth.NewServiceManager([]macaroon.Service{
 		{
 			Name:     serviceName,
@@ -31,46 +33,40 @@ func TestServiceAuthMacaroon(t *testing.T) {
 
 	minter := auth.NewMinter(serviceLimiter, &secretStore, mock.NewChallenger())
 
-	preToken, _ := minter.MintToken(uid, serviceName)
+	preToken, err := minter.MintToken(uid, serviceName+":0")
+
+	if err != nil {
+		t.Error(err)
+	}
 
 	mac := preToken.Macaroon
 
 	t.Log(mac.ToJSON())
-
-	err := serviceLimiter.VerifyCaveats(mac.Caveats()...)
-
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestServiceAuthMacaroonEncoded(t *testing.T) {
-	serviceLimiter := auth.NewServiceManager([]macaroon.Service{
-		{
-			Name:     serviceName,
-			Price:    servicePrice,
-			Tier:     macaroon.BaseTier,
-			Duration: time.Hour,
-		},
-	})
-
-	uid := secretStore.NewUser()
-
-	minter := auth.NewMinter(serviceLimiter, &secretStore, mock.NewChallenger())
-
-	preToken, _ := minter.MintToken(uid, serviceName)
-
-	mac := preToken.Macaroon
-
-	mac, err := macaroon.DecodeBase64(mac.String())
-
-	if err != nil {
-		t.Error(err)
-	}
 
 	err = serviceLimiter.VerifyCaveats(mac.Caveats()...)
 
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func TestService(t *testing.T) {
+	targetService := macaroon.Service{
+		Name:     serviceName,
+		Price:    servicePrice,
+		Tier:     macaroon.BaseTier,
+		Duration: time.Hour,
+	}
+
+	service_id := targetService.Id().String()
+
+	serviceLimiter := auth.NewServiceManager([]macaroon.Service{targetService})
+
+	service, err := serviceLimiter.Service(service_id)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	assert.Equal(t, service, targetService)
 }
