@@ -13,8 +13,8 @@ const (
 	capabilityErr = "this capability is not present for this service"
 )
 
-// ServiceLimiter is an interface defining methods for managing services and their capabilities.
-type ServiceLimiter interface {
+// An interface defining methods for managing services and their capabilities.
+type ServiceManager interface {
 	// Services retrieves information about services with the provided names.
 	Service(context.Context, string) (macaroon.Service, error)
 
@@ -22,22 +22,22 @@ type ServiceLimiter interface {
 	VerifyCaveats(caveats ...macaroon.Caveat) error
 }
 
-// ServiceManager implements the ServiceLimiter interface and manages multiple services.
-type ServiceManager struct {
+// The configuration of every services.
+type Config struct {
 	services map[string]macaroon.Service
 }
 
 // NewServiceManager creates a new ServiceManager with the provided services.
-func NewServiceManager(services []macaroon.Service) *ServiceManager {
+func NewServiceManager(services []macaroon.Service) *Config {
 	serviceMap := make(map[string]macaroon.Service)
 	for _, service := range services {
 		serviceMap[service.Name] = service
 	}
-	return &ServiceManager{services: serviceMap}
+	return &Config{services: serviceMap}
 }
 
 // Service retrieves information about a service with the provided name.
-func (sm *ServiceManager) Service(ctx context.Context, name string) (macaroon.Service, error) {
+func (sm *Config) Service(ctx context.Context, name string) (macaroon.Service, error) {
 	service, exists := sm.services[name]
 	if !exists {
 		return macaroon.Service{}, fmt.Errorf("service not found: %s", name)
@@ -46,7 +46,7 @@ func (sm *ServiceManager) Service(ctx context.Context, name string) (macaroon.Se
 }
 
 // VerifyCaveats checks the validity of the provided caveats.
-func (sm *ServiceManager) VerifyCaveats(caveats ...macaroon.Caveat) error {
+func (sm *Config) VerifyCaveats(caveats ...macaroon.Caveat) error {
 	err := sm.checkExpiry(caveats...)
 
 	if err != nil {
@@ -62,12 +62,14 @@ func (sm *ServiceManager) VerifyCaveats(caveats ...macaroon.Caveat) error {
 	return nil
 }
 
-func (sm *ServiceManager) checkExpiry(caveats ...macaroon.Caveat) error {
-	timeLimit := time.Now()
+func (sm *Config) checkExpiry(caveats ...macaroon.Caveat) error {
+	now := time.Now()
 
-	for _, expiryTime := range macaroon.GetValue("expiry", caveats) {
+	for _, expiryTime := range macaroon.GetValue("expiry_date", caveats) {
 		// Parse the value of the time caveat as a time.Time.
 		expiry, err := time.Parse(time.Layout, expiryTime)
+
+		fmt.Println(now, expiryTime)
 
 		// If there is an error parsing the time, return the error.
 		if err != nil {
@@ -75,27 +77,31 @@ func (sm *ServiceManager) checkExpiry(caveats ...macaroon.Caveat) error {
 		}
 
 		// Check if the expiry time is before the current time.
-		if expiry.Before(timeLimit) {
+		if now.After(expiry) {
 			return errors.New(timeErr)
 		}
 
-		timeLimit = expiry
+		now = expiry
 	}
 
 	return nil
 }
 
-func (sm *ServiceManager) checkCapabilities(caveats ...macaroon.Caveat) error {
+func (sm *Config) checkCapabilities(caveats ...macaroon.Caveat) error {
 	service_id := macaroon.GetValue("service", caveats)[0]
 	service := sm.services[service_id]
 
 	for _, aCapacility := range macaroon.GetValue("capabilities", caveats) {
+		match := false
 		for _, tCapability := range service.Capabilities {
 			if aCapacility == tCapability {
+				match = true
 				break
 			}
 		}
-		return errors.New(capabilityErr)
+		if !match {
+			return errors.New(capabilityErr)
+		}
 	}
 
 	return nil

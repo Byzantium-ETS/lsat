@@ -16,12 +16,12 @@ const (
 
 // https://github.com/lightninglabs/aperture/blob/master/mint/mint.go#L65
 type Minter struct {
-	service    ServiceLimiter       // Une abstraction des services offert par une application
+	service    ServiceManager       // Une abstraction des services offert par une application
 	secrets    secrets.SecretStore  // La source des secrets des lsats qui seront créé
 	challenger challenge.Challenger // Crée les challenges sous la forme d'invoices
 }
 
-func NewMinter(service ServiceLimiter, secrets secrets.SecretStore, challenger challenge.Challenger) Minter {
+func NewMinter(service ServiceManager, secrets secrets.SecretStore, challenger challenge.Challenger) Minter {
 	return Minter{service, secrets, challenger}
 }
 

@@ -35,7 +35,7 @@ func TestServiceAuthMacaroon(t *testing.T) {
 
 	mac := preToken.Macaroon
 
-	t.Log(mac)
+	t.Log(mac.ToJSON())
 
 	err := serviceLimiter.VerifyCaveats(mac.Caveats()...)
 

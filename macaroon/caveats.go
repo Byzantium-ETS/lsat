@@ -38,7 +38,7 @@ func (caveat *Caveat) UnmarshalJSON(data []byte) error {
 
 // Returns the Value of the caveat with the given Key
 func GetValue(key string, caveats []Caveat) []string {
-	values := make([]string, 1)
+	values := make([]string, 0)
 	for _, caveat := range caveats {
 		if caveat.Key == key {
 			values = append(values, caveat.Value)

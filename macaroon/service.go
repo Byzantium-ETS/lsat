@@ -29,7 +29,7 @@ type ServiceId struct {
 }
 
 func NewService(Name string, Price uint64) Service {
-	return Service{Name: Name, Price: Price, Tier: BaseTier}
+	return Service{Name: Name, Price: Price, Tier: BaseTier, Duration: time.Hour}
 }
 
 func (service ServiceId) String() string {
@@ -43,10 +43,10 @@ func (service *Service) Id() ServiceId {
 
 // The base caveats of a service.
 func (service *Service) Caveats() []Caveat {
-	expiry := time.Now().Add(service.Duration)
+	expiry := time.Now().Round(time.Second).Add(service.Duration)
 	caveats := []Caveat{
 		NewCaveat("service", service.Id().String()),
-		NewCaveat("expiry_date", expiry.String()),
+		NewCaveat("expiry_date", expiry.Format(time.Layout)),
 	}
 	for _, capability := range service.Capabilities {
 		caveats = append(caveats, NewCaveat("capability", capability))
@@ -59,16 +59,6 @@ func (service *Service) Caveats() []Caveat {
 type ServiceIterator struct {
 	caveats []Caveat
 }
-
-// func (iter ServiceIterator) String() string {
-// 	s := "services: "
-
-// 	for i := 0; iter.caveats[i].Key == "service"; i++ {
-// 		s += iter.caveats[i].Value + ","
-// 	}
-
-// 	return s
-// }
 
 // HasNext returns true if there are more caveats and the next one is related to a service.
 func (iter *ServiceIterator) HasNext() bool {
