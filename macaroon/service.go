@@ -15,11 +15,11 @@ const (
 
 // Service represents the configuration of a service.
 type Service struct {
-	Name         string        // The name of the service.
-	Tier         Tier          // The tier or level of the service.
-	Price        uint64        // The price in milli-satoshi.
-	Duration     time.Duration // The lifetime of the service.
-	Capabilities []string      // The capabilities of the service.
+	Name         string        `json:"name"`         // The name of the service.
+	Tier         Tier          `json:"tier"`         // The tier or level of the service.
+	Price        uint64        `json:"price"`        // The price in milli-satoshi.
+	Duration     time.Duration `json:"duration"`     // The lifetime of the service.
+	Capabilities []string      `json:"capabilities"` // The capabilities of the service.
 }
 
 // Service represents the identifiers of a Service
