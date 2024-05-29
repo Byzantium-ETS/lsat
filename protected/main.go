@@ -6,7 +6,6 @@ import (
 	"log"
 	"lsat/auth"
 	"lsat/macaroon"
-	"lsat/mock"
 	"lsat/secrets"
 	"net/http"
 	"strings"
@@ -17,7 +16,9 @@ const (
 	authFailedMessage = "You do not have access to that service!"
 )
 
-var serviceLimiter = mock.NewServiceLimiter()
+var serviceLimiter = auth.NewServiceManager([]macaroon.Service{
+	macaroon.NewService("image", 1000),
+})
 
 type Handler struct {
 	secrets.SecretFactory

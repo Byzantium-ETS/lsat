@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"errors"
 	"lsat/challenge"
 	"lsat/macaroon"
@@ -9,19 +8,19 @@ import (
 )
 
 const (
-	// permErr = "the macaroon lacks permissions"
+	permErr = "the macaroon lacks permissions"
 	hashErr = "the payment_hash does not correspond to the preimage"
 	sigErr  = "the macaroon has an invalid signature"
 )
 
 // https://github.com/lightninglabs/aperture/blob/master/mint/mint.go#L65
 type Minter struct {
-	service    ServiceLimiter       // Une abstraction des services offert par une application
+	service    ServiceManager       // Une abstraction des services offert par une application
 	secrets    secrets.SecretStore  // La source des secrets des lsats qui seront créé
 	challenger challenge.Challenger // Crée les challenges sous la forme d'invoices
 }
 
-func NewMinter(service ServiceLimiter, secrets secrets.SecretStore, challenger challenge.Challenger) Minter {
+func NewMinter(service ServiceManager, secrets secrets.SecretStore, challenger challenge.Challenger) Minter {
 	return Minter{service, secrets, challenger}
 }
 
@@ -38,18 +37,18 @@ func totalPrice(services ...macaroon.Service) uint64 {
 }
 
 // MintToken generates a new pre-token for the user.
-func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (macaroon.PreToken, error) {
+func (minter *Minter) MintToken(uid secrets.UserId, service_name string) (macaroon.PreToken, error) {
 	// Initialize an empty pre-token.
 	token := macaroon.PreToken{}
 
 	// Fetch information about the requested services.
-	services, err := minter.service.Services(context.Background(), service_names...)
+	service, err := minter.service.Service(service_name)
 	if err != nil {
 		return token, err
 	}
 
 	// Initiate a payment challenge using the total price of the requested services.
-	result, err := minter.challenger.Challenge(totalPrice(services...))
+	result, err := minter.challenger.Challenge(totalPrice(service))
 	if err != nil {
 		return token, err
 	}
@@ -58,10 +57,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 	token.InvoiceResponse = result
 
 	// Retrieve the capabilities (caveats) associated with the requested services.
-	caveats, err := minter.service.Capabilities(context.Background(), services...)
-	if err != nil {
-		return token, err
-	}
+	caveats := service.Caveats()
 
 	// Get or create a secret associated with the user ID.
 	secret, err := minter.secrets.GetSecret(uid)
@@ -74,7 +70,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 	oven := macaroon.NewOven(secret)
 
 	// Cook the Macaroon with the user ID, requested services, and retrieved capabilities.
-	mac, err := oven.WithUserId(uid).WithService(services...).WithThirdPartyCaveats(caveats...).Cook()
+	mac, err := oven.WithUserId(uid).WithFirstPartyCaveats(caveats...).Cook()
 	if err != nil {
 		return token, err
 	}
@@ -91,17 +87,17 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_names ...string) (ma
 // Authentify the validity of the token.
 func (minter *Minter) AuthToken(lsat *macaroon.Token) error {
 	// Verify the preimage
-	paymentHash, err := lsat.Macaroon.GetValue("payment_hash")
-	if err != nil {
-		return err
+	paymentHash := lsat.Macaroon.GetValue("payment_hash")
+	if len(paymentHash) == 0 {
+		return errors.New(permErr)
 	}
 
-	if lsat.Preimage.Hash().String() != paymentHash {
+	if lsat.Preimage.Hash().String() != paymentHash[0] {
 		return errors.New(hashErr)
 	}
 
 	// Validate the LSAT's Macaroon using the authentication service.
-	err = minter.AuthMacaroon(&lsat.Macaroon)
+	err := minter.AuthMacaroon(&lsat.Macaroon)
 	if err != nil {
 		return err
 	}

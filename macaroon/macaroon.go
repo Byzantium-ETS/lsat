@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"lsat/secrets"
 
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -45,14 +44,8 @@ func (mac *Macaroon) Signature() lntypes.Hash {
 }
 
 // Returns the Value of the caveat with the given Key
-func (mac *Macaroon) GetValue(key string) (string, error) {
-	for _, caveat := range mac.caveats {
-		if caveat.Key == key {
-			return caveat.Value, nil
-		}
-	}
-
-	return "", errors.New(valueErr)
+func (mac *Macaroon) GetValue(key string) []string {
+	return GetValue(key, mac.caveats)
 }
 
 func (mac Macaroon) String() string {

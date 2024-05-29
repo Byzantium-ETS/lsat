@@ -3,7 +3,6 @@ package mock
 import (
 	"context"
 	"errors"
-	"lsat/auth"
 	. "lsat/macaroon"
 	"time"
 )
@@ -21,9 +20,9 @@ const (
 
 type testServiceLimiter struct{}
 
-func NewServiceLimiter() auth.ServiceLimiter {
-	return &testServiceLimiter{}
-}
+// func NewServiceLimiter() auth.ServiceLimiter {
+// return &testServiceLimiter{}
+// }
 
 // listCaveats generates a list of caveats based on the provided service.
 func listCaveats(service Service) []Caveat {

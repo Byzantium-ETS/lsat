@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lightningnetwork/lnd/lntypes"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStoreToken(t *testing.T) {
@@ -64,9 +65,7 @@ func TestGetToken(t *testing.T) {
 
 	t.Log(tokenOut)
 
-	if tokenIn.String() != tokenOut.String() {
-		t.Error("The token should be identical!")
-	}
+	assert.Equal(t, tokenIn.String(), tokenOut.String())
 
 	store.RemoveToken(id)
 }
