@@ -17,8 +17,8 @@ func NewChallenger() challenge.Challenger {
 func (*testChallenger) Challenge(price uint64) (challenge.InvoiceResponse, error) {
 	preimage := lntypes.Preimage(secrets.NewSecret())
 	return challenge.InvoiceResponse{
-		Invoice:     preimage.String(),
-		Preimage:    preimage,
+		Invoice: preimage.String(),
+		// Preimage:    preimage,
 		PaymentHash: preimage.Hash(),
 	}, nil
 }

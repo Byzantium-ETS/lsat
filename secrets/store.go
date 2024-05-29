@@ -8,14 +8,13 @@ import (
 // SecretStore defines methods for managing secrets and tokens in a storage system.
 type SecretStore interface {
 	// NewSecret generates and returns a new secret associated with the provided user ID.
-	// It returns an error if the operation fails.
 	NewSecret(uid UserId) (Secret, error)
 
 	// GetSecret retrieves the secret associated with the provided user ID.
-	// It returns an error if the operation fails.
 	GetSecret(uid UserId) (Secret, error)
 }
 
+// A hash based SecretStore.
 type SecretFactory struct {
 	root Secret
 }

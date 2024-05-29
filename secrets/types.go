@@ -14,7 +14,7 @@ type Secret [SecretSize]byte
 // UserId is a fixed-size byte array representing a user identifier.
 type UserId [SecretSize]byte
 
-// NewUserId generates a new random UserId.
+// NewUserId generates a new unique UserId.
 func NewUserId() UserId {
 	var uid UserId
 	rand.Read(uid[:]) // Fill the byte array with random data.

@@ -15,16 +15,7 @@ type ChallengeFactory struct {
 	LightningNode
 }
 
-// Challenge generates a payment challenge for the specified price by creating
-// a Lightning invoice and returning the associated preimage and payment request.
-// The generated preimage is used to verify successful payment by the client.
-//
-// Parameters:
-//   - price: The price of the challenge, specified in satoshis.
-//
-// Returns:
-//   - ChallengeResult: A struct containing the preimage and payment request.
-//   - error: An error, if any, encountered during the invoice creation process.
+// Challenge generates a payment challenge for the specified price by creating a Lightning invoice
 func (challenger *ChallengeFactory) Challenge(price uint64) (InvoiceResponse, error) {
 	// Build an invoice with the generated preimage, price, and other details.
 	invoice := CreateInvoiceRequest{

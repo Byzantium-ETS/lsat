@@ -16,24 +16,17 @@ func (c *PhoenixNode) CreateInvoice(_ context.Context, req challenge.CreateInvoi
 		Description:     req.Description,
 		DescriptionHash: req.DescriptionHash.String(),
 		AmountSat:       req.Amount,
+		ExternalId:      req.Udata,
 	})
 
 	if err != nil {
 		return challenge.InvoiceResponse{}, err
 	}
 
-	payment, err := c.PhoenixClient.GetIncomingPayment(response.PaymentHash)
-
-	if err != nil {
-		return challenge.InvoiceResponse{}, err
-	}
-
-	paymentHash, _ := lntypes.MakeHashFromStr(payment.PaymentHash)
-	preimage, _ := lntypes.MakePreimageFromStr(payment.Preimage)
+	paymentHash, _ := lntypes.MakeHashFromStr(response.PaymentHash)
 
 	return challenge.InvoiceResponse{
 		PaymentHash: paymentHash,
-		Preimage:    preimage,
 		Invoice:     response.Serialized,
 	}, nil
 }

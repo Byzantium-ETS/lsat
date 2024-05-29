@@ -5,6 +5,8 @@ import (
 	"lsat/macaroon"
 	"lsat/mock"
 	"testing"
+
+	"github.com/lightningnetwork/lnd/lntypes"
 )
 
 func TestMintAuthMacaroon(t *testing.T) {
@@ -38,7 +40,13 @@ func TestMintAuthToken(t *testing.T) {
 
 	preToken, err := minter.MintToken(uid, mock.DogService)
 
+	if err != nil {
+		t.Error(err)
+	}
+
 	t.Log(preToken.Macaroon.ToJSON())
+
+	preimage, err := lntypes.MakePreimageFromStr(preToken.InvoiceResponse.Invoice)
 
 	if err != nil {
 		t.Error(err)
@@ -46,7 +54,7 @@ func TestMintAuthToken(t *testing.T) {
 
 	lsat := macaroon.Token{
 		Macaroon: preToken.Macaroon,
-		Preimage: preToken.InvoiceResponse.Preimage,
+		Preimage: preimage,
 	}
 
 	err = minter.AuthToken(&lsat)

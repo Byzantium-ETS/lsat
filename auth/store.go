@@ -16,12 +16,14 @@ const (
 
 // TokenStore defines the interface for storing and retrieving tokens.
 type TokenStore interface {
-	// StoreToken stores the provided token with the specified ID in the store.
-	// It returns an error if the operation fails.
+	// Stores the provided token with the specified ID in the store.
 	StoreToken(macaroon.TokenID, macaroon.Token) error
 
-	// GetToken returns a reference to the token stored in the store for the specified ID.
+	// Returns a reference to the token stored in the store for the specified ID.
 	GetToken(macaroon.TokenID) (*macaroon.Token, error)
+
+	// Removes the token from the store
+	RemoveToken(macaroon.TokenID) (*macaroon.Token, error)
 }
 
 // LocalStore implements the TokenStore interface using local file storage.
@@ -42,13 +44,13 @@ func NewStore(directory string) (LocalStore, error) {
 	return LocalStore{directory}, nil
 }
 
-// StoreToken saves the token to a file at folderPath/baseFileName+id.Hash.
-func (store *LocalStore) StoreToken(id macaroon.TokenID, mac macaroon.Token) error {
+// Saves the token to a file.
+func (store *LocalStore) StoreToken(id macaroon.TokenID, token macaroon.Token) error {
 	// Construct the file path
 	filePath := store.FilePath(id)
 
 	// Marshal the token to JSON
-	data, err := json.Marshal(mac)
+	data, err := json.Marshal(token)
 	if err != nil {
 		return fmt.Errorf("failed to marshal token: %v", err)
 	}
@@ -75,14 +77,28 @@ func (store *LocalStore) GetToken(id macaroon.TokenID) (*macaroon.Token, error) 
 	}
 
 	// Unmarshal the JSON data into a Token object
-	var mac macaroon.Token
-	err = json.Unmarshal(data, &mac)
+	var token macaroon.Token
+	err = json.Unmarshal(data, &token)
 	if err != nil {
 		err := fmt.Sprintf("failed to unmarshal token: %v\n", err)
 		return nil, errors.New(err)
 	}
 
-	return &mac, nil
+	return &token, nil
+}
+
+func (store *LocalStore) RemoveToken(id macaroon.TokenID) (*macaroon.Token, error) {
+	token, err := store.GetToken(id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = os.Remove(store.FilePath(id))
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }
 
 func (store *LocalStore) FilePath(id macaroon.TokenID) string {

@@ -4,7 +4,6 @@ import (
 	"lsat/auth"
 	"lsat/macaroon"
 	"lsat/secrets"
-	"os"
 	"testing"
 
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -33,7 +32,7 @@ func TestStoreToken(t *testing.T) {
 		t.Error(err)
 	}
 
-	os.Remove(store.FilePath(id))
+	store.RemoveToken(id)
 }
 
 func TestGetToken(t *testing.T) {
@@ -69,5 +68,5 @@ func TestGetToken(t *testing.T) {
 		t.Error("The token should be identical!")
 	}
 
-	os.Remove(store.FilePath(id))
+	store.RemoveToken(id)
 }

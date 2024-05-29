@@ -34,13 +34,13 @@ func (oven *Oven) Attenuate(caveat Caveat) {
 	oven.caveats = append(oven.caveats, caveat)
 }
 
-// Adds multiple third party caveats to the Oven.
+// Adds third party caveats to the Oven.
 func (oven Oven) WithThirdPartyCaveats(caveats ...Caveat) Oven {
 	oven.caveats = append(oven.caveats, caveats...)
 	return oven
 }
 
-// Adds multiple first party caveats to the Oven.
+// Adds first party caveats to the Oven.
 func (oven Oven) WithFirstPartyCaveats(caveats ...Caveat) Oven {
 	oven.caveats = append(caveats, oven.caveats...)
 	return oven
