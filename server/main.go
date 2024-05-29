@@ -28,9 +28,11 @@ const (
 )
 
 var (
-	serviceLimiter = mock.NewServiceLimiter()
-	secretStore    = secrets.NewSecretFactory()
-	challenger     = mock.NewChallenger()
+	serviceLimiter = auth.NewServiceManager([]macaroon.Service{
+		macaroon.NewService("image", 1000),
+	})
+	secretStore = secrets.NewSecretFactory()
+	challenger  = mock.NewChallenger()
 )
 
 func main() {

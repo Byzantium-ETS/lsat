@@ -46,14 +46,6 @@ func (oven Oven) WithFirstPartyCaveats(caveats ...Caveat) Oven {
 	return oven
 }
 
-// Adds caveats for the specified services to the Oven.
-func (oven Oven) WithService(services ...Service) Oven {
-	for _, service := range services {
-		oven.caveats = append([]Caveat{service.Caveat()}, oven.caveats...)
-	}
-	return oven
-}
-
 // Cook computes the signature of the Macaroon and returns it.
 func (oven Oven) Cook() (Macaroon, error) {
 	// Create a new HMAC with SHA-256 using the root secret as the key

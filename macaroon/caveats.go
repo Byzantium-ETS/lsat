@@ -12,6 +12,7 @@ type Caveat struct {
 	Value string // The specific value or condition associated with the key.
 }
 
+// A new caveat.
 func NewCaveat(Key string, Value string) Caveat {
 	return Caveat{Key, Value}
 }
@@ -33,4 +34,16 @@ func (caveat *Caveat) UnmarshalJSON(data []byte) error {
 	*caveat = NewCaveat(key, value)
 
 	return nil
+}
+
+// Returns the Value of the caveat with the given Key
+func GetValue(key string, caveats []Caveat) []string {
+	values := make([]string, 1)
+	for _, caveat := range caveats {
+		if caveat.Key == key {
+			values = append(values, caveat.Value)
+		}
+	}
+
+	return values
 }
