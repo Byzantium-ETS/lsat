@@ -20,7 +20,7 @@ const (
 var serviceLimiter = mock.NewServiceLimiter()
 
 type Handler struct {
-	mock.TestStore
+	secrets.SecretFactory
 }
 
 func main() {
@@ -46,7 +46,7 @@ func (h *Handler) handleSecret(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	h.TestStore = mock.NewTestStoreFromSecret(secret)
+	h.SecretFactory = secrets.NewStoreFromSecret(secret)
 
 	w.WriteHeader(http.StatusOK)
 }
@@ -63,7 +63,7 @@ func (h *Handler) handleProtected(w http.ResponseWriter, r *http.Request) {
 
 	Macaroon, _ := macaroon.DecodeBase64(credentials[0])
 
-	minter := auth.NewMinter(serviceLimiter, &h.TestStore, nil)
+	minter := auth.NewMinter(serviceLimiter, &h.SecretFactory, nil)
 
 	// Process the request with the extracted Macaroon and preimage
 	// Your logic for handling the request goes here...

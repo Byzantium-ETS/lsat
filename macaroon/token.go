@@ -74,15 +74,15 @@ func (token PreToken) String() string {
 
 // A key used to identify macaroons in the database.
 type TokenID struct {
-	version Version
-	userId  secrets.UserId // The id of the token owner
-	hash    lntypes.Hash   // The hash of the preimage of the transaction
+	Version Version
+	UserId  secrets.UserId // The id of the token owner
+	Hash    lntypes.Hash   // The hash of the preimage of the transaction
 }
 
 func (token Token) Id() TokenID {
 	return TokenID{
-		version: BaseVersion,
-		userId:  token.Macaroon.UserId(),
-		hash:    lntypes.Hash(token.Preimage),
+		Version: BaseVersion,
+		UserId:  token.Macaroon.UserId(),
+		Hash:    token.Preimage.Hash(),
 	}
 }

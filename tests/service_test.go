@@ -14,7 +14,7 @@ var caveat macaroon.Caveat = macaroon.NewCaveat("expiry", "12:00 PM")
 func TestServiceAuthMacaroon(t *testing.T) {
 	serviceLimiter := mock.NewServiceLimiter()
 
-	uid := secretStore.CreateUser()
+	uid := secretStore.NewUser()
 
 	minter := auth.NewMinter(serviceLimiter, &secretStore, mock.NewChallenger())
 
@@ -34,7 +34,7 @@ func TestServiceAuthMacaroon(t *testing.T) {
 func TestServiceAuthMacaroonEncoded(t *testing.T) {
 	serviceLimiter := mock.NewServiceLimiter()
 
-	uid := secretStore.CreateUser()
+	uid := secretStore.NewUser()
 
 	minter := auth.NewMinter(serviceLimiter, &secretStore, mock.NewChallenger())
 

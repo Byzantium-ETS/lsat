@@ -10,7 +10,7 @@ type CreateInvoiceRequest struct {
 	Description     string
 	DescriptionHash lntypes.Hash
 	Amount          uint64
-	Udata           any
+	Udata           string
 }
 
 type PayInvoiceRequest struct {
@@ -19,7 +19,7 @@ type PayInvoiceRequest struct {
 }
 
 type InvoiceResponse struct {
-	Preimage    lntypes.Preimage
+	// Preimage    lntypes.Preimage
 	PaymentHash lntypes.Hash
 	Invoice     string
 }
