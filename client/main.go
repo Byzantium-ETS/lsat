@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"lsat/challenge"
 	"lsat/macaroon"
+	"lsat/mock"
 	"net/http"
 	"strings"
 
@@ -21,43 +24,45 @@ func main() {
 	client.sendTokenRequest()
 }
 
-func parseLSATString(mac string, invoice string) (macaroon.Token, error) {
-	Macaroon, err := parseMacaroonString(mac)
+func parseToken(mac string, invoice string) (macaroon.Token, error) {
+	Macaroon, err := decodeMacaroon(mac)
 	if err != nil {
 		return macaroon.Token{}, fmt.Errorf("error decoding macaroon: %v", err)
 	}
-	Preimage, err := parsePreimageString(invoice)
+	Preimage, err := decodePreimage(invoice)
 	if err != nil {
 		return macaroon.Token{}, fmt.Errorf("error decoding preimage: %v", err)
 	}
 
-	// You can use the decoded macaroon and invoice as needed in your application
-	// For example, you might want to return the macaroon
-	return macaroon.Token{
-		Macaroon: Macaroon,
-		Preimage: Preimage,
-	}, nil
+	return macaroon.Token{Macaroon: Macaroon, Preimage: Preimage}, nil
 }
 
-func parseMacaroonString(input string) (macaroon.Macaroon, error) {
-	// Split the input string into parts
+func decodeMacaroon(input string) (macaroon.Macaroon, error) {
 	parts := strings.Split(input, "\"")
+	if len(parts) < 2 {
+		return macaroon.Macaroon{}, fmt.Errorf("invalid macaroon string")
+	}
 
 	macaroonStr := parts[1]
-
 	return macaroon.DecodeBase64(macaroonStr)
 }
 
-func parsePreimageString(input string) (lntypes.Preimage, error) {
-	// Split the input string into parts
+func decodePreimage(input string) (lntypes.Preimage, error) {
 	parts := strings.Split(input, "\"")
+	if len(parts) < 2 {
+		return lntypes.Preimage{}, fmt.Errorf("invalid preimage string")
+	}
 
 	invoiceStr := parts[1]
+	ln := mock.TestLightningNode{Balance: 100000}
+	payment, err := ln.PayInvoice(context.Background(), challenge.PayInvoiceRequest{Invoice: invoiceStr})
+	if err != nil {
+		return lntypes.Preimage{}, err
+	}
 
-	return lntypes.MakePreimageFromStr(invoiceStr)
+	return payment.Preimage, nil
 }
 
-// TO-DO Put the response in a struct
 func (c *TestClient) sendTokenRequest() {
 	fmt.Println("Requesting Token...")
 
@@ -68,10 +73,8 @@ func (c *TestClient) sendTokenRequest() {
 		return
 	}
 
-	// Set the LSAT Authorization header with an invalid token for demonstration
 	req.Header.Set("Authorization", "L402")
 
-	// Perform the request
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Error sending request:", err)
@@ -79,30 +82,26 @@ func (c *TestClient) sendTokenRequest() {
 	}
 	defer resp.Body.Close()
 
-	// Check if the response has a 402 status code
 	if resp.StatusCode == http.StatusPaymentRequired {
-		// Parse the WWW-Authenticate header to get the LSAT token and invoice
 		wwwAuthenticateHeader := resp.Header.Get("WWW-Authenticate")
 		parts := strings.Split(wwwAuthenticateHeader, " ")
 
-		if len(parts) > 1 && parts[0] == "L402" {
+		if len(parts) > 2 && parts[0] == "L402" {
 			macaroon := parts[1]
 			invoice := parts[2]
 
-			token, err := parseLSATString(macaroon, invoice)
-
+			token, err := parseToken(macaroon, invoice)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 
 			fmt.Println(token.Macaroon.ToJSON())
-
 			c.sendAuthorizationRequest(authURL, token)
 		}
 	} else {
-		err, _ := io.ReadAll(resp.Body)
-		fmt.Println("Unexpected response status:", resp.Status, "->", string(err))
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Printf("(%s) Unexpected response status: %s\n", resp.Status, string(body))
 	}
 }
 
@@ -116,10 +115,8 @@ func (c *TestClient) sendAuthorizationRequest(address string, token macaroon.Tok
 		return
 	}
 
-	// Set the LSAT Authorization header with an invalid token for demonstration
 	req.Header.Set("Authorization", fmt.Sprintf("L402 %s", token.String()))
 
-	// Perform the request
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Error sending request:", err)
@@ -127,13 +124,9 @@ func (c *TestClient) sendAuthorizationRequest(address string, token macaroon.Tok
 	}
 	defer resp.Body.Close()
 
-	// Check if the response has a 402 status code
 	if resp.StatusCode == http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		// Parse the WWW-Authenticate header to get the LSAT token and invoice
-		protected := string(body)
-
-		fmt.Println("Success : " + protected)
+		fmt.Println(string(body))
 	} else {
 		fmt.Println("Unexpected response status:", resp.Status)
 	}

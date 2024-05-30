@@ -37,12 +37,12 @@ func totalPrice(services ...macaroon.Service) uint64 {
 }
 
 // MintToken generates a new pre-token for the user.
-func (minter *Minter) MintToken(uid secrets.UserId, service_name string) (macaroon.PreToken, error) {
+func (minter *Minter) MintToken(uid secrets.UserId, service_id macaroon.ServiceId) (macaroon.PreToken, error) {
 	// Initialize an empty pre-token.
 	token := macaroon.PreToken{}
 
 	// Fetch information about the requested services.
-	service, err := minter.service.Service(service_name)
+	service, err := minter.service.Service(service_id.String())
 	if err != nil {
 		return token, err
 	}

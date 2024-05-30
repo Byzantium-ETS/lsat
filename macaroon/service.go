@@ -19,7 +19,7 @@ type Service struct {
 	Tier         Tier          `json:"tier"`         // The tier or level of the service.
 	Price        uint64        `json:"price"`        // The price in milli-satoshi.
 	Duration     time.Duration `json:"duration"`     // The lifetime of the service.
-	Capabilities []string      `json:"capabilities"` // The capabilities of the service.
+	Capabilities []Caveat      `json:"capabilities"` // The capabilities of the service.
 }
 
 // Service represents the identifiers of a Service
@@ -30,6 +30,10 @@ type ServiceId struct {
 
 func NewService(Name string, Price uint64) Service {
 	return Service{Name: Name, Price: Price, Tier: BaseTier, Duration: time.Hour}
+}
+
+func NewServiceId(Name string, Tier Tier) ServiceId {
+	return ServiceId{Name, Tier}
 }
 
 func (service ServiceId) String() string {
@@ -46,11 +50,9 @@ func (service *Service) Caveats() []Caveat {
 	expiry := time.Now().Round(time.Second).Add(service.Duration)
 	caveats := []Caveat{
 		NewCaveat("service", service.Id().String()),
-		NewCaveat("expiry_date", expiry.Format(time.Layout)),
+		NewCaveat("expiry_date", expiry.Format(time.RFC3339)),
 	}
-	for _, capability := range service.Capabilities {
-		caveats = append(caveats, NewCaveat("capability", capability))
-	}
+	caveats = append(caveats, service.Capabilities...)
 	return caveats
 }
 

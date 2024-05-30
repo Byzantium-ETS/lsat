@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"lsat/auth"
 	"lsat/macaroon"
@@ -19,88 +17,51 @@ type Handler struct {
 }
 
 const (
-	host         = "localhost:8080"
-	protectedURL = "http://localhost:8443"
-
+	host              = "localhost:8080"
 	macaroonHeader    = "L402"
-	catService        = mock.CatService
+	serviceName       = "image"
 	authFailedMessage = "Authentication failed!"
 )
 
 var (
-	serviceLimiter = auth.NewServiceManager([]macaroon.Service{
-		macaroon.NewService("image", 1000),
+	serviceLimiter = auth.NewConfig([]macaroon.Service{
+		macaroon.NewService(serviceName, 1000),
 	})
 	secretStore = secrets.NewSecretFactory()
 	challenger  = mock.NewChallenger()
 )
 
 func main() {
-	// Initialize your Server instance
 	minter := auth.NewMinter(serviceLimiter, &secretStore, challenger)
-
-	// Create a Handler with access to the Minter
-	handle := &Handler{Minter: &minter}
-
-	go handle.shareSecret()
+	handler := &Handler{Minter: &minter}
 
 	fmt.Println("Server launched at", host)
-	http.HandleFunc("/", handle.handleAuthorization)
-	http.HandleFunc("/protected", handle.handleProtected)
+	http.HandleFunc("/", handler.handleAuthorization)
+	http.HandleFunc("/protected", handler.handleProtected)
 	err := http.ListenAndServe(host, nil)
-	fmt.Println(err)
-}
-
-func (h *Handler) shareSecret() error {
-	root := secretStore.GetRoot()
-
-	req, err := http.NewRequest("POST", protectedURL, bytes.NewReader(root[:]))
 	if err != nil {
-		return errors.New("Error creating request: " + err.Error())
+		fmt.Println(err)
 	}
-
-	client := http.Client{}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	return nil
 }
 
 func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
-	// Extract the Authorization header
 	authHeader := r.Header.Get("Authorization")
-
-	// Check if Authorization header is present
-	// Parse the Authorization header
 	parts := strings.Split(authHeader, " ")
 
-	// Extract the Macaroon and preimage from the Authorization header
 	if len(parts) != 2 || parts[0] != macaroonHeader {
-		// Create a new UserId
 		uid := secrets.NewUserId()
 
-		// Invalid Authorization header format, respond with 402 Payment Required and WWW-Authenticate header
-		pretoken, err := h.Minter.MintToken(uid, catService)
-
+		pretoken, err := h.Minter.MintToken(uid, macaroon.NewServiceId(serviceName, 0))
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
 			fmt.Fprintf(w, "%s", err)
 			return
 		}
 
-		macaroon := pretoken.Macaroon
+		mac := pretoken.Macaroon
+		authHeader := fmt.Sprintf("%s macaroon=\"%s\", invoice=\"%s\"", macaroonHeader, mac, pretoken.InvoiceResponse.Invoice)
 
-		// Format Macaroon and invoice in WWW-Authenticate header
-		authHeader := fmt.Sprintf("%s macaroon=\"%s\", invoice=\"%s\"", macaroonHeader, macaroon, pretoken.InvoiceResponse.Invoice)
-
-		// Set the WWW-Authenticate header
 		w.Header().Set("WWW-Authenticate", authHeader)
-
 		w.WriteHeader(http.StatusPaymentRequired)
 		fmt.Fprint(w, "Payment Required")
 		return
@@ -111,30 +72,47 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleProtected(w http.ResponseWriter, r *http.Request) {
-	// Extract the Authorization header
 	authHeader := r.Header.Get("Authorization")
-
-	// Check if Authorization header is present
-	// Parse the Authorization header
 	parts := strings.Split(authHeader, " ")
 
-	credentials := strings.Split(parts[1], ":")
-
-	Macaroon, _ := macaroon.DecodeBase64(credentials[0])
-	Preimage, _ := lntypes.MakePreimageFromStr(credentials[1])
-
-	token := macaroon.Token{
-		Macaroon: Macaroon,
-		Preimage: Preimage,
+	if len(parts) != 2 || parts[0] != macaroonHeader {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "%s", authFailedMessage)
+		return
 	}
 
-	err := h.Minter.AuthToken(&token)
+	credentials := strings.Split(parts[1], ":")
+	if len(credentials) != 2 {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "%s", authFailedMessage)
+		return
+	}
 
-	if err == nil {
-		// The request is redirected to the server with the protected ressource.
-		http.RedirectHandler(protectedURL+"/protected", http.StatusTemporaryRedirect).ServeHTTP(w, r)
-	} else {
+	mac, err := macaroon.DecodeBase64(credentials[0])
+	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprintf(w, "%s", err)
+		return
 	}
+
+	preimage, err := lntypes.MakePreimageFromStr(credentials[1])
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "%s", err)
+		return
+	}
+
+	token := macaroon.Token{
+		Macaroon: mac,
+		Preimage: preimage,
+	}
+
+	err = h.Minter.AuthToken(&token)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "%s", err)
+		return
+	}
+
+	http.Redirect(w, r, "https://picsum.photos/500", http.StatusOK)
 }
