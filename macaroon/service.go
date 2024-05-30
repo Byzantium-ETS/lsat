@@ -50,7 +50,7 @@ func (service *Service) Caveats() []Caveat {
 	expiry := time.Now().Round(time.Second).Add(service.Duration)
 	caveats := []Caveat{
 		NewCaveat("service", service.Id().String()),
-		NewCaveat("expiry_date", expiry.Format(time.Layout)),
+		NewCaveat("expiry_date", expiry.Format(time.RFC3339)),
 	}
 	caveats = append(caveats, service.Capabilities...)
 	return caveats

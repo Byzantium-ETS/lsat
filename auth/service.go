@@ -57,22 +57,36 @@ func (c *Config) VerifyCaveats(caveats ...macaroon.Caveat) error {
 
 func (c *Config) checkExpiry(caveats ...macaroon.Caveat) error {
 	now := time.Now()
+	var previousExpiry time.Time
 
-	for _, expiryTime := range macaroon.GetValue("expiry_date", caveats) {
+	for i, expiryTime := range macaroon.GetValue("expiry_date", caveats) {
 		// Parse the value of the time caveat as a time.Time.
-		expiry, err := time.Parse(time.Layout, expiryTime)
+		expiry, err := time.Parse(time.RFC3339, expiryTime)
 
 		// If there is an error parsing the time, return the error.
 		if err != nil {
 			return err
 		}
 
-		// Check if the expiry time is before the current time.
-		if now.After(expiry) {
-			return errors.New(timeErr)
+		if i == 0 {
+			// The first expiry_date should be after now.
+			if now.After(expiry) {
+				return errors.New(timeErr)
+			}
+		} else {
+			// Each following expiry_date should be more strict or before the previous expiry date.
+			if expiry.After(previousExpiry) {
+				return errors.New("expiry_date is not more strict than the previous one")
+			}
 		}
 
-		now = expiry
+		// Update previousExpiry to the current expiry.
+		previousExpiry = expiry
+	}
+
+	// now must be before all the expiry_date.
+	if now.After(previousExpiry) {
+		return errors.New(timeErr)
 	}
 
 	return nil
