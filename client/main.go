@@ -34,7 +34,7 @@ func parseToken(mac string, invoice string) (macaroon.Token, error) {
 		return macaroon.Token{}, fmt.Errorf("error decoding preimage: %v", err)
 	}
 
-	return macaroon.Token{Macaroon, Preimage}, nil
+	return macaroon.Token{Macaroon: Macaroon, Preimage: Preimage}, nil
 }
 
 func decodeMacaroon(input string) (macaroon.Macaroon, error) {
