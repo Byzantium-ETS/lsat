@@ -9,7 +9,7 @@ actor Client as C
 participant "Client Node" as CNode #B9A898
 participant "Authorization Server" as Auth
 participant "Auth Server Node" as SNode  #B9A898
-participant "Resource Server" as Res #e06666
+participant "Resource" as Res #e06666
 
 alt First time user
   C -> Auth: GET /

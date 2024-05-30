@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"lsat/macaroon"
 	"os"
@@ -72,16 +71,14 @@ func (store *LocalStore) GetToken(id macaroon.TokenID) (*macaroon.Token, error) 
 	// Read the JSON data from the file
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		err := fmt.Sprintf("failed to read token file: %v\n", err)
-		return nil, errors.New(err)
+		return nil, fmt.Errorf("failed to read token file: %v", err)
 	}
 
 	// Unmarshal the JSON data into a Token object
 	var token macaroon.Token
 	err = json.Unmarshal(data, &token)
 	if err != nil {
-		err := fmt.Sprintf("failed to unmarshal token: %v\n", err)
-		return nil, errors.New(err)
+		return nil, fmt.Errorf("failed to unmarshal token: %v", err)
 	}
 
 	return &token, nil

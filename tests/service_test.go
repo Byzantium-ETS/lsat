@@ -20,7 +20,7 @@ var service macaroon.Service = macaroon.NewService("image", 1000)
 var caveat macaroon.Caveat = macaroon.NewCaveat("expiry", "12:00 PM")
 
 func TestVerifyCaveats(t *testing.T) {
-	serviceLimiter := auth.NewServiceManager([]macaroon.Service{
+	serviceLimiter := auth.NewConfig([]macaroon.Service{
 		{
 			Name:     serviceName,
 			Price:    servicePrice,
@@ -33,7 +33,7 @@ func TestVerifyCaveats(t *testing.T) {
 
 	minter := auth.NewMinter(serviceLimiter, &secretStore, mock.NewChallenger())
 
-	preToken, err := minter.MintToken(uid, serviceName+":0")
+	preToken, err := minter.MintToken(uid, macaroon.NewServiceId(serviceName, 0))
 
 	if err != nil {
 		t.Error(err)
@@ -60,7 +60,7 @@ func TestService(t *testing.T) {
 
 	service_id := targetService.Id().String()
 
-	serviceLimiter := auth.NewServiceManager([]macaroon.Service{targetService})
+	serviceLimiter := auth.NewConfig([]macaroon.Service{targetService})
 
 	service, err := serviceLimiter.Service(service_id)
 

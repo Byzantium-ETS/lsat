@@ -32,6 +32,10 @@ func NewService(Name string, Price uint64) Service {
 	return Service{Name: Name, Price: Price, Tier: BaseTier, Duration: time.Hour}
 }
 
+func NewServiceId(Name string, Tier Tier) ServiceId {
+	return ServiceId{Name, Tier}
+}
+
 func (service ServiceId) String() string {
 	return fmt.Sprintf("%s:%d", service.Name, service.Tier)
 }

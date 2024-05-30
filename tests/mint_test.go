@@ -10,7 +10,7 @@ import (
 )
 
 func TestMintAuthMacaroon(t *testing.T) {
-	serviceLimiter := auth.NewServiceManager([]macaroon.Service{
+	serviceLimiter := auth.NewConfig([]macaroon.Service{
 		macaroon.NewService(serviceName, servicePrice),
 	})
 
@@ -18,7 +18,7 @@ func TestMintAuthMacaroon(t *testing.T) {
 
 	minter := auth.NewMinter(serviceLimiter, &secretStore, mock.NewChallenger())
 
-	preToken, err := minter.MintToken(uid, serviceName+":0")
+	preToken, err := minter.MintToken(uid, macaroon.NewServiceId(serviceName, 0))
 
 	if err != nil {
 		t.Error(err)
@@ -34,7 +34,7 @@ func TestMintAuthMacaroon(t *testing.T) {
 }
 
 func TestMintAuthToken(t *testing.T) {
-	serviceLimiter := auth.NewServiceManager([]macaroon.Service{
+	serviceLimiter := auth.NewConfig([]macaroon.Service{
 		macaroon.NewService(serviceName, servicePrice),
 	})
 
@@ -42,7 +42,7 @@ func TestMintAuthToken(t *testing.T) {
 
 	minter := auth.NewMinter(serviceLimiter, &secretStore, mock.NewChallenger())
 
-	preToken, err := minter.MintToken(uid, serviceName+":0")
+	preToken, err := minter.MintToken(uid, macaroon.NewServiceId(serviceName, 0))
 
 	if err != nil {
 		t.Error(err)

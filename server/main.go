@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"lsat/auth"
 	"lsat/macaroon"
@@ -19,17 +17,16 @@ type Handler struct {
 }
 
 const (
-	host         = "localhost:8080"
-	protectedURL = "http://localhost:8443"
+	host = "localhost:8080"
 
 	macaroonHeader    = "L402"
-	catService        = mock.CatService
+	serviceName       = "image"
 	authFailedMessage = "Authentication failed!"
 )
 
 var (
-	serviceLimiter = auth.NewServiceManager([]macaroon.Service{
-		macaroon.NewService("image", 1000),
+	serviceLimiter = auth.NewConfig([]macaroon.Service{
+		macaroon.NewService(serviceName, 1000),
 	})
 	secretStore = secrets.NewSecretFactory()
 	challenger  = mock.NewChallenger()
@@ -42,33 +39,12 @@ func main() {
 	// Create a Handler with access to the Minter
 	handle := &Handler{Minter: &minter}
 
-	go handle.shareSecret()
-
+	// Launch the server
 	fmt.Println("Server launched at", host)
 	http.HandleFunc("/", handle.handleAuthorization)
 	http.HandleFunc("/protected", handle.handleProtected)
 	err := http.ListenAndServe(host, nil)
 	fmt.Println(err)
-}
-
-func (h *Handler) shareSecret() error {
-	root := secretStore.GetRoot()
-
-	req, err := http.NewRequest("POST", protectedURL, bytes.NewReader(root[:]))
-	if err != nil {
-		return errors.New("Error creating request: " + err.Error())
-	}
-
-	client := http.Client{}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	return nil
 }
 
 func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +61,7 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 		uid := secrets.NewUserId()
 
 		// Invalid Authorization header format, respond with 402 Payment Required and WWW-Authenticate header
-		pretoken, err := h.Minter.MintToken(uid, catService)
+		pretoken, err := h.Minter.MintToken(uid, macaroon.NewServiceId(serviceName, 0))
 
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
@@ -131,8 +107,8 @@ func (h *Handler) handleProtected(w http.ResponseWriter, r *http.Request) {
 	err := h.Minter.AuthToken(&token)
 
 	if err == nil {
-		// The request is redirected to the server with the protected ressource.
-		http.RedirectHandler(protectedURL+"/protected", http.StatusTemporaryRedirect).ServeHTTP(w, r)
+		// Return an image
+		http.Redirect(w, r, "https://picsum.photos/500", http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprintf(w, "%s", err)
