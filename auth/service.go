@@ -52,12 +52,6 @@ func (c *Config) VerifyCaveats(caveats ...macaroon.Caveat) error {
 		return err
 	}
 
-	err = c.checkCapabilities(caveats...)
-
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -79,26 +73,6 @@ func (c *Config) checkExpiry(caveats ...macaroon.Caveat) error {
 		}
 
 		now = expiry
-	}
-
-	return nil
-}
-
-func (c *Config) checkCapabilities(caveats ...macaroon.Caveat) error {
-	service_id := macaroon.GetValue("service", caveats)[0]
-	service := c.services[service_id]
-
-	for _, aCapacility := range macaroon.GetValue("capability", caveats) {
-		match := false
-		for _, tCapability := range service.Capabilities {
-			if aCapacility == tCapability {
-				match = true
-				break
-			}
-		}
-		if !match {
-			return errors.New(capabilityErr)
-		}
 	}
 
 	return nil

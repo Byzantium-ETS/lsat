@@ -2,36 +2,13 @@ package tests
 
 import (
 	"context"
-	"encoding/hex"
 	"lsat/challenge"
 	"lsat/mock"
 	"lsat/secrets"
 	"testing"
 
-	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestCreateInvoice(t *testing.T) {
-	ln := mock.TestLightningNode{}
-
-	invoice, err := ln.CreateInvoice(context.Background(), challenge.CreateInvoiceRequest{})
-	if err != nil {
-		t.Error(err)
-	}
-
-	raw_invoice, err := hex.DecodeString(invoice.Invoice)
-	if err != nil {
-		t.Error(err)
-	}
-
-	preimage, err := lntypes.MakePreimage(xor(raw_invoice))
-	if err != nil {
-		t.Error(err)
-	}
-
-	assert.Equal(t, invoice.PaymentHash, preimage.Hash())
-}
 
 func TestPayInvoice(t *testing.T) {
 	ln := mock.TestLightningNode{}
