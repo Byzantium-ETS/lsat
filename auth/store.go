@@ -16,13 +16,13 @@ const (
 // TokenStore defines the interface for storing and retrieving tokens.
 type TokenStore interface {
 	// Stores the provided token with the specified ID in the store.
-	StoreToken(macaroon.TokenID, macaroon.Token) error
+	StoreToken(macaroon.TokenId, macaroon.Token) error
 
 	// Returns a reference to the token stored in the store for the specified ID.
-	GetToken(macaroon.TokenID) (*macaroon.Token, error)
+	GetToken(macaroon.TokenId) (*macaroon.Token, error)
 
 	// Removes the token from the store
-	RemoveToken(macaroon.TokenID) (*macaroon.Token, error)
+	RemoveToken(macaroon.TokenId) (*macaroon.Token, error)
 }
 
 // LocalStore implements the TokenStore interface using local file storage.
@@ -44,7 +44,7 @@ func NewStore(directory string) (LocalStore, error) {
 }
 
 // Saves the token to a file.
-func (store *LocalStore) StoreToken(id macaroon.TokenID, token macaroon.Token) error {
+func (store *LocalStore) StoreToken(id macaroon.TokenId, token macaroon.Token) error {
 	// Construct the file path
 	filePath := store.FilePath(id)
 
@@ -64,7 +64,7 @@ func (store *LocalStore) StoreToken(id macaroon.TokenID, token macaroon.Token) e
 }
 
 // GetToken reads the token from a file where it should be saved, unmarshals it, and returns the token object.
-func (store *LocalStore) GetToken(id macaroon.TokenID) (*macaroon.Token, error) {
+func (store *LocalStore) GetToken(id macaroon.TokenId) (*macaroon.Token, error) {
 	// Construct the file path
 	filePath := store.FilePath(id)
 
@@ -84,7 +84,7 @@ func (store *LocalStore) GetToken(id macaroon.TokenID) (*macaroon.Token, error) 
 	return &token, nil
 }
 
-func (store *LocalStore) RemoveToken(id macaroon.TokenID) (*macaroon.Token, error) {
+func (store *LocalStore) RemoveToken(id macaroon.TokenId) (*macaroon.Token, error) {
 	token, err := store.GetToken(id)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (store *LocalStore) RemoveToken(id macaroon.TokenID) (*macaroon.Token, erro
 	return token, nil
 }
 
-func (store *LocalStore) FilePath(id macaroon.TokenID) string {
+func (store *LocalStore) FilePath(id macaroon.TokenId) string {
 	return filepath.Join(store.directory, baseFileName+id.Hash.String())
 }
 

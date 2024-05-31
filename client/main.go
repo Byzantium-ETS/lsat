@@ -105,11 +105,11 @@ func (c *TestClient) sendTokenRequest() {
 	}
 }
 
-func (c *TestClient) sendAuthorizationRequest(address string, token macaroon.Token) {
+func (c *TestClient) sendAuthorizationRequest(url string, token macaroon.Token) {
 	fmt.Println("Sending Authorization Request...")
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", address+"/protected", nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return
