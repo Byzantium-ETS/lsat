@@ -31,7 +31,7 @@ func TestVerifyCaveats(t *testing.T) {
 
 	uid := secretStore.NewUser()
 
-	minter := auth.NewMinter(serviceLimiter, &secretStore, mock.NewChallenger())
+	minter := auth.NewMinter(serviceLimiter, secretStore, mock.NewChallenger())
 
 	preToken, err := minter.MintToken(uid, macaroon.NewServiceId(serviceName, 0))
 

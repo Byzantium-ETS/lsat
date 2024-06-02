@@ -59,7 +59,7 @@ func (c *Config) checkExpiry(caveats ...macaroon.Caveat) error {
 	now := time.Now()
 	var previousExpiry time.Time
 
-	for i, expiryTime := range macaroon.GetValue("expiry_date", caveats) {
+	for i, expiryTime := range macaroon.GetValue(macaroon.ExpiryKey, caveats) {
 		// Parse the value of the time caveat as a time.Time.
 		expiry, err := time.Parse(time.RFC3339, expiryTime)
 

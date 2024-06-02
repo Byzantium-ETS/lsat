@@ -77,7 +77,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_id macaroon.ServiceI
 
 	// Store the Macaroon in the secrets archive.
 	token.Macaroon, _ = mac.Oven().WithFirstPartyCaveats(macaroon.Caveat{
-		Key: "payment_hash", Value: result.PaymentHash.String(),
+		Key: macaroon.PaymentHashKey, Value: result.PaymentHash.String(),
 	}).Cook()
 
 	// Return the generated pre-token.
@@ -87,7 +87,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_id macaroon.ServiceI
 // Authentify the validity of the token.
 func (minter *Minter) AuthToken(lsat *macaroon.Token) error {
 	// Verify the preimage
-	paymentHash := lsat.Macaroon.GetValue("payment_hash")
+	paymentHash := lsat.Macaroon.GetValue(macaroon.PaymentHashKey)
 	if len(paymentHash) == 0 {
 		return errors.New(permErr)
 	}

@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+const (
+	ExpiryKey      string = "expiry_date"
+	PaymentHashKey string = "payment_hash"
+)
+
 // Caveat represents a condition or restriction associated with a macaroon.
 type Caveat struct {
 	Key   string // The identifier or type of the caveat.

@@ -38,7 +38,7 @@ var (
 func main() {
 	host := getEnv("HOST", "localhost:8080")
 
-	minter := auth.NewMinter(config, &secretStore, challenger)
+	minter := auth.NewMinter(config, secretStore, challenger)
 	handler := &Handler{Minter: &minter}
 
 	log.Printf("Server launched at %s\n", host)
@@ -121,6 +121,8 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "%s", err)
 		return
 	}
+
+	log.Printf("Authorization: %s", mac.UserId())
 
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }

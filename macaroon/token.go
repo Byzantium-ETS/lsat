@@ -2,7 +2,6 @@ package macaroon
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"lsat/challenge"
 	"lsat/secrets"
@@ -26,8 +25,8 @@ func (token Token) String() string {
 	// Encode the Macaroon(s) as base64
 	macaroonBase64 := token.Macaroon.String()
 
-	// Encode the Preimage as hex
-	preimageHex := hex.EncodeToString(token.Preimage[:])
+	// Encode the Preimage
+	preimageHex := token.String()
 
 	// Combine the encoded Macaroon(s) and encoded Preimage as <macaroon(s)>:<preimage>
 	encodedToken := fmt.Sprintf("%s:%s", macaroonBase64, preimageHex)
@@ -53,9 +52,9 @@ func (token PreToken) Pay(node challenge.LightningNode) (Token, error) {
 	// cx = context.WithValue(cx, "macaroon", token.Macaroon) // Enrich the context with a macaroon
 	response, err := node.PayInvoice(cx, challenge.PayInvoiceRequest{Invoice: token.InvoiceResponse.Invoice})
 	if err != nil {
-		return Token{Macaroon: token.Macaroon, Preimage: response.Preimage}, nil
-	} else {
 		return Token{}, err
+	} else {
+		return Token{Macaroon: token.Macaroon, Preimage: response.Preimage}, nil
 	}
 }
 

@@ -31,16 +31,16 @@ type LocalStore struct {
 }
 
 // Create a new LocalStore.
-func NewStore(directory string) (LocalStore, error) {
+func NewStore(directory string) (*LocalStore, error) {
 	// If the target path for the token store doesn't exist, then we'll
 	// create it now before we proceed.
 	if !fileExists(directory) {
 		if err := os.MkdirAll(directory, 0700); err != nil {
-			return LocalStore{}, err
+			return nil, err
 		}
 	}
 
-	return LocalStore{directory}, nil
+	return &LocalStore{directory}, nil
 }
 
 // Saves the token to a file.
