@@ -25,8 +25,8 @@ func (token Token) String() string {
 	// Encode the Macaroon(s) as base64
 	macaroonBase64 := token.Macaroon.String()
 
-	// Encode the Preimage
-	preimageHex := token.String()
+	// Encode the Preimage as hex
+	preimageHex := token.Preimage.String()
 
 	// Combine the encoded Macaroon(s) and encoded Preimage as <macaroon(s)>:<preimage>
 	encodedToken := fmt.Sprintf("%s:%s", macaroonBase64, preimageHex)
