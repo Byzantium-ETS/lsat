@@ -1,7 +1,8 @@
-package macaroon
+package service
 
 import (
 	"fmt"
+	"lsat/macaroon"
 	"strconv"
 	"strings"
 	"time"
@@ -15,11 +16,11 @@ const (
 
 // Service represents the configuration of a service.
 type Service struct {
-	Name         string        `json:"name"`         // The name of the service.
-	Tier         Tier          `json:"tier"`         // The tier or level of the service.
-	Price        uint64        `json:"price"`        // The price in milli-satoshi.
-	Duration     time.Duration `json:"duration"`     // The lifetime of the service.
-	Capabilities []Caveat      `json:"capabilities"` // The capabilities of the service.
+	Name         string            `json:"name"`         // The name of the service.
+	Tier         Tier              `json:"tier"`         // The tier or level of the service.
+	Price        uint64            `json:"price"`        // The price in milli-satoshi.
+	Duration     time.Duration     `json:"duration"`     // The lifetime of the service.
+	Capabilities []macaroon.Caveat `json:"capabilities"` // The capabilities of the service.
 }
 
 // Service represents the identifiers of a Service
@@ -32,7 +33,7 @@ func NewService(Name string, Price uint64) Service {
 	return Service{Name: Name, Price: Price, Tier: BaseTier, Duration: time.Hour}
 }
 
-func NewServiceId(Name string, Tier Tier) ServiceId {
+func NewId(Name string, Tier Tier) ServiceId {
 	return ServiceId{Name, Tier}
 }
 
@@ -46,11 +47,11 @@ func (service *Service) Id() ServiceId {
 }
 
 // The base caveats of a service.
-func (service *Service) Caveats() []Caveat {
+func (service *Service) Caveats() []macaroon.Caveat {
 	expiry := time.Now().Round(time.Second).Add(service.Duration)
-	caveats := []Caveat{
-		NewCaveat("service", service.Id().String()),
-		NewCaveat("expiry_date", expiry.Format(time.RFC3339)),
+	caveats := []macaroon.Caveat{
+		macaroon.NewCaveat("service", service.Id().String()),
+		macaroon.NewCaveat(macaroon.ExpiryDateKey, expiry.Format(time.RFC3339)),
 	}
 	caveats = append(caveats, service.Capabilities...)
 	return caveats
@@ -59,7 +60,12 @@ func (service *Service) Caveats() []Caveat {
 // ServiceIterator is a type representing an iterator for extracting service names
 // from a sequence of caveats.
 type ServiceIterator struct {
-	caveats []Caveat
+	caveats []macaroon.Caveat
+}
+
+// Create a new servicce iterator.
+func NewIterator(caveats []macaroon.Caveat) ServiceIterator {
+	return ServiceIterator{caveats: caveats}
 }
 
 // HasNext returns true if there are more caveats and the next one is related to a service.

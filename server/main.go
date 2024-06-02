@@ -11,6 +11,7 @@ import (
 	"lsat/macaroon"
 	"lsat/mock"
 	"lsat/secrets"
+	"lsat/service"
 
 	"github.com/lightningnetwork/lnd/lntypes"
 )
@@ -29,8 +30,8 @@ const (
 var serviceName = getEnv("SERVICE_NAME", defaultService)
 
 var (
-	config = auth.NewConfig([]macaroon.Service{
-		macaroon.NewService(serviceName, 1000),
+	config = service.NewConfig([]service.Service{
+		service.NewService(serviceName, 1000),
 	})
 	secretStore = secrets.NewSecretFactory()
 	challenger  = mock.NewChallenger()
@@ -74,7 +75,7 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 	if len(parts) != 2 || parts[0] != macaroonHeader {
 		uid := secrets.NewUserId()
 
-		pretoken, err := h.Minter.MintToken(uid, macaroon.NewServiceId(getEnv("SERVICE_NAME", defaultService), 0))
+		pretoken, err := h.Minter.MintToken(uid, service.NewId(getEnv("SERVICE_NAME", defaultService), 0))
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
 			fmt.Fprintf(w, "%s", err)

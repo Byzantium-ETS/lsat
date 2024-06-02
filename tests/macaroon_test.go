@@ -102,8 +102,8 @@ func TestFirstPartyCaveats(t *testing.T) {
 	oven := macaroon.NewOven(root)
 	oven = oven.WithUserId(uid).WithThirdPartyCaveats(macaroon.NewCaveat("name", "bob"))
 
-	mac1, _ := oven.WithFirstPartyCaveats(service.Caveats()...).Cook()
-	mac2, _ := oven.WithFirstPartyCaveats(service.Caveats()...).Cook()
+	mac1, _ := oven.WithFirstPartyCaveats(testService.Caveats()...).Cook()
+	mac2, _ := oven.WithFirstPartyCaveats(testService.Caveats()...).Cook()
 
 	t.Log(mac1.ToJSON())
 	t.Log(mac2.ToJSON())

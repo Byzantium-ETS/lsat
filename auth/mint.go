@@ -5,6 +5,7 @@ import (
 	"lsat/challenge"
 	"lsat/macaroon"
 	"lsat/secrets"
+	"lsat/service"
 )
 
 const (
@@ -15,12 +16,12 @@ const (
 
 // https://github.com/lightninglabs/aperture/blob/master/mint/mint.go#L65
 type Minter struct {
-	service    ServiceManager       // Une abstraction des services offert par une application
-	secrets    secrets.SecretStore  // La source des secrets des lsats qui seront créé
-	challenger challenge.Challenger // Crée les challenges sous la forme d'invoices
+	service    service.ServiceManager // Une abstraction des services offert par une application
+	secrets    secrets.SecretStore    // La source des secrets des lsats qui seront créé
+	challenger challenge.Challenger   // Crée les challenges sous la forme d'invoices
 }
 
-func NewMinter(service ServiceManager, secrets secrets.SecretStore, challenger challenge.Challenger) Minter {
+func NewMinter(service service.ServiceManager, secrets secrets.SecretStore, challenger challenge.Challenger) Minter {
 	return Minter{service, secrets, challenger}
 }
 
@@ -28,7 +29,7 @@ func (minter *Minter) SecretStore() secrets.SecretStore {
 	return minter.secrets
 }
 
-func totalPrice(services ...macaroon.Service) uint64 {
+func totalPrice(services ...service.Service) uint64 {
 	var total uint64 = 0
 	for _, s := range services {
 		total += s.Price
@@ -37,7 +38,7 @@ func totalPrice(services ...macaroon.Service) uint64 {
 }
 
 // MintToken generates a new pre-token for the user.
-func (minter *Minter) MintToken(uid secrets.UserId, service_id macaroon.ServiceId) (macaroon.PreToken, error) {
+func (minter *Minter) MintToken(uid secrets.UserId, service_id service.ServiceId) (macaroon.PreToken, error) {
 	// Initialize an empty pre-token.
 	token := macaroon.PreToken{}
 

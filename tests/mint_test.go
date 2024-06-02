@@ -3,21 +3,21 @@ package tests
 import (
 	"lsat/auth"
 	"lsat/challenge"
-	"lsat/macaroon"
 	"lsat/mock"
+	"lsat/service"
 	"testing"
 )
 
 func TestMintAuthMacaroon(t *testing.T) {
-	serviceLimiter := auth.NewConfig([]macaroon.Service{
-		macaroon.NewService(serviceName, servicePrice),
+	serviceLimiter := service.NewConfig([]service.Service{
+		service.NewService(serviceName, servicePrice),
 	})
 
 	uid := secretStore.NewUser()
 
 	minter := auth.NewMinter(serviceLimiter, secretStore, mock.NewChallenger())
 
-	preToken, err := minter.MintToken(uid, macaroon.NewServiceId(serviceName, 0))
+	preToken, err := minter.MintToken(uid, service.NewId(serviceName, 0))
 
 	if err != nil {
 		t.Error(err)
@@ -33,8 +33,8 @@ func TestMintAuthMacaroon(t *testing.T) {
 }
 
 func TestMintAuthToken(t *testing.T) {
-	serviceLimiter := auth.NewConfig([]macaroon.Service{
-		macaroon.NewService(serviceName, servicePrice),
+	serviceLimiter := service.NewConfig([]service.Service{
+		service.NewService(serviceName, servicePrice),
 	})
 
 	lightningNode := mock.TestLightningNode{Balance: 1000}
@@ -45,7 +45,7 @@ func TestMintAuthToken(t *testing.T) {
 
 	minter := auth.NewMinter(serviceLimiter, secretStore, &challenger)
 
-	preToken, err := minter.MintToken(uid, macaroon.NewServiceId(serviceName, 0))
+	preToken, err := minter.MintToken(uid, service.NewId(serviceName, 0))
 
 	if err != nil {
 		t.Error(err)
