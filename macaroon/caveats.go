@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	ExpiryKey      string = "expiry_date"
+	ExpiryDataKey  string = "expiry_date"
 	PaymentHashKey string = "payment_hash"
 )
 

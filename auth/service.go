@@ -59,7 +59,7 @@ func (c *Config) checkExpiry(caveats ...macaroon.Caveat) error {
 	now := time.Now()
 	var previousExpiry time.Time
 
-	for i, expiryTime := range macaroon.GetValue(macaroon.ExpiryKey, caveats) {
+	for i, expiryTime := range macaroon.GetValue(macaroon.ExpiryDataKey, caveats) {
 		// Parse the value of the time caveat as a time.Time.
 		expiry, err := time.Parse(time.RFC3339, expiryTime)
 
@@ -76,7 +76,7 @@ func (c *Config) checkExpiry(caveats ...macaroon.Caveat) error {
 		} else {
 			// Each following expiry_date should be more strict or before the previous expiry date.
 			if expiry.After(previousExpiry) {
-				return errors.New("expiry_date is not more strict than the previous one")
+				return fmt.Errorf("%s is not more strict than the previous one", macaroon.ExpiryDataKey)
 			}
 		}
 

@@ -112,6 +112,14 @@ func (c *TestClient) sendAuthorizationRequest(url string, token macaroon.Token) 
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
+
+		// Store the token for later use.
+		// store, err := auth.NewStore("./.store")
+		// if err != nil {
+		// 	fmt.Println("Error creating the store:", err)
+		// }
+		// store.StoreToken(token.Id(), token)
+
 		body, _ := io.ReadAll(resp.Body)
 		fmt.Println(string(body))
 	} else {
