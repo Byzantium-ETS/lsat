@@ -21,11 +21,12 @@ type Handler struct {
 
 const (
 	macaroonHeader    = "L402"
+	defaultService    = "image"
 	authFailedMessage = "Authentication failed!"
 	redirectURL       = "https://picsum.photos/500"
 )
 
-var serviceName = getEnv("SERVICE_NAME", "image")
+var serviceName = getEnv("SERVICE_NAME", defaultService)
 
 var (
 	config = auth.NewConfig([]macaroon.Service{
@@ -43,14 +44,14 @@ func main() {
 
 	log.Printf("Server launched at %s\n", host)
 	http.HandleFunc("/", handler.handleAuthorization)
-	http.HandleFunc("/preflight", handlePreflight)
+	// http.HandleFunc("/preflight", handlePreflight)
 	err := http.ListenAndServe(host, nil)
 	if err != nil {
 		log.Fatalf("Server failed to start: %v\n", err)
 	}
 }
 
-func handlePreflight(w http.ResponseWriter, r *http.Request) {
+func handlePreflight(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -60,7 +61,7 @@ func handlePreflight(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodOptions {
-		handlePreflight(w, r)
+		handlePreflight(w)
 		return
 	}
 
@@ -73,7 +74,7 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 	if len(parts) != 2 || parts[0] != macaroonHeader {
 		uid := secrets.NewUserId()
 
-		pretoken, err := h.Minter.MintToken(uid, macaroon.NewServiceId(getEnv("SERVICE_NAME", "image"), 0))
+		pretoken, err := h.Minter.MintToken(uid, macaroon.NewServiceId(getEnv("SERVICE_NAME", defaultService), 0))
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
 			fmt.Fprintf(w, "%s", err)
