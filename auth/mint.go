@@ -43,7 +43,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_id service.ServiceId
 	token := macaroon.PreToken{}
 
 	// Fetch information about the requested services.
-	service, err := minter.service.Service(service_id.String())
+	service, err := minter.service.Service(service_id)
 	if err != nil {
 		return token, err
 	}

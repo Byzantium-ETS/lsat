@@ -31,7 +31,7 @@ var serviceName = getEnv("SERVICE_NAME", defaultService)
 
 var (
 	config = service.NewConfig([]service.Service{
-		service.NewService(serviceName, 1000),
+		service.NewService(serviceName, 1500),
 	})
 	secretStore = secrets.NewSecretFactory()
 	challenger  = mock.NewChallenger()
@@ -75,7 +75,7 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 	if len(parts) != 2 || parts[0] != macaroonHeader {
 		uid := secrets.NewUserId()
 
-		pretoken, err := h.Minter.MintToken(uid, service.NewId(getEnv("SERVICE_NAME", defaultService), 0))
+		pretoken, err := h.Minter.MintToken(uid, service.NewId(serviceName, 0))
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
 			fmt.Fprintf(w, "%s", err)

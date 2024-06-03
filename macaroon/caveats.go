@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	ServiceKey     string = "service"
 	ExpiryDateKey  string = "expiry_date"
 	PaymentHashKey string = "payment_hash"
 )

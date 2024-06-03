@@ -11,16 +11,16 @@ import (
 type Tier = int8
 
 const (
-	BaseTier = 0
+	BaseTier Tier = 0
 )
 
 // Service represents the configuration of a service.
 type Service struct {
-	Name         string            `json:"name"`         // The name of the service.
-	Tier         Tier              `json:"tier"`         // The tier or level of the service.
-	Price        uint64            `json:"price"`        // The price in milli-satoshi.
-	Duration     time.Duration     `json:"duration"`     // The lifetime of the service.
-	Capabilities []macaroon.Caveat `json:"capabilities"` // The capabilities of the service.
+	Name         string            // The name of the service.
+	Tier         Tier              // The tier or level of the service.
+	Price        uint64            // The price in milli-satoshi.
+	Duration     time.Duration     // The lifetime of the service.
+	Capabilities []macaroon.Caveat // The capabilities of the service.
 }
 
 // Service represents the identifiers of a Service
@@ -48,9 +48,9 @@ func (service *Service) Id() ServiceId {
 
 // The base caveats of a service.
 func (service *Service) Caveats() []macaroon.Caveat {
-	expiry := time.Now().Round(time.Second).Add(service.Duration)
+	expiry := time.Now().Add(service.Duration)
 	caveats := []macaroon.Caveat{
-		macaroon.NewCaveat("service", service.Id().String()),
+		macaroon.NewCaveat(macaroon.ServiceKey, service.Id().String()),
 		macaroon.NewCaveat(macaroon.ExpiryDateKey, expiry.Format(time.RFC3339)),
 	}
 	caveats = append(caveats, service.Capabilities...)

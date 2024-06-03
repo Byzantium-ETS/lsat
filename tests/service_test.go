@@ -59,7 +59,7 @@ func TestService(t *testing.T) {
 		Duration: time.Hour,
 	}
 
-	service_id := targetService.Id().String()
+	service_id := targetService.Id()
 
 	serviceLimiter := service.NewConfig([]service.Service{targetService})
 

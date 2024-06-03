@@ -15,7 +15,7 @@ const (
 // An interface defining methods for managing services and their capabilities.
 type ServiceManager interface {
 	// Services retrieves information about services with the provided names.
-	Service(string) (Service, error)
+	Service(ServiceId) (Service, error)
 
 	// VerifyCaveats checks the validity of the provided caveats.
 	VerifyCaveats(caveats ...macaroon.Caveat) error
@@ -36,10 +36,10 @@ func NewConfig(services []Service) *Config {
 }
 
 // Service retrieves information about a service with the provided name.
-func (c *Config) Service(name string) (Service, error) {
-	service, exists := c.services[name]
+func (c *Config) Service(id ServiceId) (Service, error) {
+	service, exists := c.services[id.String()]
 	if !exists {
-		return Service{}, fmt.Errorf("service not found: %s", name)
+		return Service{}, fmt.Errorf("service not found: %s", id.String())
 	}
 	return service, nil
 }
