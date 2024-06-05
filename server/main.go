@@ -29,12 +29,16 @@ const (
 
 var serviceName = getEnv("SERVICE_NAME", defaultService)
 
+// Connect to the phoenix node
+// var lightningNode = phoenixd.NewPhoenixClient("baseUrl", "password")
+
 var (
 	config = service.NewConfig([]service.Service{
 		service.NewService(serviceName, 1500),
 	})
 	secretStore = secrets.NewSecretFactory()
 	challenger  = mock.NewChallenger()
+	// challenger = phoenixd.PhoenixNode { Client: lightningNode }
 )
 
 func main() {

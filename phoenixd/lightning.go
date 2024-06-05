@@ -8,11 +8,11 @@ import (
 )
 
 type PhoenixNode struct {
-	*PhoenixClient
+	Client *PhoenixClient
 }
 
 func (c *PhoenixNode) CreateInvoice(_ context.Context, req challenge.CreateInvoiceRequest) (challenge.InvoiceResponse, error) {
-	response, err := c.PhoenixClient.CreateInvoice(&CreateInvoiceRequest{
+	response, err := c.Client.CreateInvoice(&CreateInvoiceRequest{
 		Description:     req.Description,
 		DescriptionHash: req.DescriptionHash.String(),
 		AmountSat:       req.Amount,
@@ -32,7 +32,7 @@ func (c *PhoenixNode) CreateInvoice(_ context.Context, req challenge.CreateInvoi
 }
 
 func (c *PhoenixNode) PayInvoice(_ context.Context, req challenge.PayInvoiceRequest) (challenge.PayInvoiceResponse, error) {
-	response, err := c.PhoenixClient.PayInvoice(&PayInvoiceRequest{
+	response, err := c.Client.PayInvoice(&PayInvoiceRequest{
 		AmountSat: req.Amount,
 		Invoice:   req.Invoice,
 	})

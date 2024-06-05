@@ -21,6 +21,11 @@ func main() {
 	client.sendTokenRequest()
 }
 
+var lightningNode = mock.TestLightningNode{Balance: 1000}
+
+// Connect to the phoenix node
+// var lightningNode = phoenixd.NewPhoenixClient("baseUrl", "password")
+
 func parsePreToken(mac string, invoice string) (macaroon.PreToken, error) {
 	Macaroon, err := decodeMacaroon(mac)
 	if err != nil {
@@ -77,7 +82,7 @@ func (c *TestClient) sendTokenRequest() {
 				return
 			}
 
-			token, err := preToken.Pay(&mock.TestLightningNode{Balance: 10000})
+			token, err := preToken.Pay(&lightningNode)
 			if err != nil {
 				fmt.Println(err)
 				return
