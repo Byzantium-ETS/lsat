@@ -2,12 +2,16 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"strings"
+
 	"lsat/auth"
 	"lsat/macaroon"
 	"lsat/mock"
 	"lsat/secrets"
-	"net/http"
-	"strings"
+	"lsat/service"
 
 	"github.com/lightningnetwork/lnd/lntypes"
 )
@@ -17,41 +21,65 @@ type Handler struct {
 }
 
 const (
-	host              = "localhost:8080"
 	macaroonHeader    = "L402"
-	serviceName       = "image"
+	defaultService    = "image"
 	authFailedMessage = "Authentication failed!"
+	redirectURL       = "https://picsum.photos/500"
 )
 
+var serviceName = getEnv("SERVICE_NAME", defaultService)
+
+// Connect to the phoenix node
+// var lightningNode = phoenixd.NewPhoenixClient("baseUrl", "password")
+
 var (
-	serviceLimiter = auth.NewConfig([]macaroon.Service{
-		macaroon.NewService(serviceName, 1000),
+	config = service.NewConfig([]service.Service{
+		service.NewService(serviceName, 1500),
 	})
 	secretStore = secrets.NewSecretFactory()
 	challenger  = mock.NewChallenger()
+	// challenger = phoenixd.PhoenixNode { Client: lightningNode }
 )
 
 func main() {
-	minter := auth.NewMinter(serviceLimiter, &secretStore, challenger)
+	host := getEnv("HOST", "localhost:8080")
+
+	minter := auth.NewMinter(config, secretStore, challenger)
 	handler := &Handler{Minter: &minter}
 
-	fmt.Println("Server launched at", host)
+	log.Printf("Server launched at %s\n", host)
 	http.HandleFunc("/", handler.handleAuthorization)
-	http.HandleFunc("/protected", handler.handleProtected)
+	// http.HandleFunc("/preflight", handlePreflight)
 	err := http.ListenAndServe(host, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalf("Server failed to start: %v\n", err)
 	}
 }
 
+func handlePreflight(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, WWW-Authenticate")
+	w.WriteHeader(http.StatusOK)
+}
+
 func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		handlePreflight(w)
+		return
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Expose-Headers", "*")
+
 	authHeader := r.Header.Get("Authorization")
 	parts := strings.Split(authHeader, " ")
 
 	if len(parts) != 2 || parts[0] != macaroonHeader {
 		uid := secrets.NewUserId()
 
-		pretoken, err := h.Minter.MintToken(uid, macaroon.NewServiceId(serviceName, 0))
+		pretoken, err := h.Minter.MintToken(uid, service.NewId(serviceName, 0))
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
 			fmt.Fprintf(w, "%s", err)
@@ -64,20 +92,6 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("WWW-Authenticate", authHeader)
 		w.WriteHeader(http.StatusPaymentRequired)
 		fmt.Fprint(w, "Payment Required")
-		return
-	}
-
-	w.WriteHeader(http.StatusUnauthorized)
-	fmt.Fprintf(w, "%s", authFailedMessage)
-}
-
-func (h *Handler) handleProtected(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	parts := strings.Split(authHeader, " ")
-
-	if len(parts) != 2 || parts[0] != macaroonHeader {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(w, "%s", authFailedMessage)
 		return
 	}
 
@@ -114,5 +128,14 @@ func (h *Handler) handleProtected(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "https://picsum.photos/500", http.StatusOK)
+	log.Printf("Authorization: %s", mac.UserId())
+
+	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+}
+
+func getEnv(key, defaultVal string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return defaultVal
 }

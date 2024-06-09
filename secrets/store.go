@@ -19,8 +19,8 @@ type SecretFactory struct {
 	root Secret
 }
 
-func NewSecretFactory() SecretFactory {
-	return SecretFactory{
+func NewSecretFactory() *SecretFactory {
+	return &SecretFactory{
 		root: NewSecret(),
 	}
 }

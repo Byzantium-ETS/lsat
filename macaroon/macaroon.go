@@ -28,10 +28,9 @@ func (mac *Macaroon) UserId() secrets.UserId {
 	return mac.userId
 }
 
-// Services extracts service names from the Macaroon's caveats.
-func (mac *Macaroon) Services() ServiceIterator {
-	return ServiceIterator{caveats: mac.caveats}
-}
+// func (mac *Macaroon) Services() service ServiceIterator {
+// 	return ServiceIterator{caveats: mac.caveats}
+// }
 
 // Caveats returns the list of caveats associated with the macaroon.
 func (mac *Macaroon) Caveats() []Caveat {

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var secretStore secrets.SecretFactory = secrets.NewSecretFactory()
+var secretStore = secrets.NewSecretFactory()
 
 func TestGetSecret(t *testing.T) {
 	user := secretStore.NewUser()

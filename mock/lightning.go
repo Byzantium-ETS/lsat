@@ -2,7 +2,7 @@ package mock
 
 import (
 	"context"
-	"encoding/hex"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"lsat/challenge"
@@ -17,7 +17,7 @@ type TestLightningNode struct {
 }
 
 type invoice struct {
-	RawInvoice []byte `json:"raw_invoice"`
+	RawInvoice string `json:"raw_invoice"`
 	Amount     uint64 `json:"amount"`
 }
 
@@ -32,7 +32,7 @@ func (ln *TestLightningNode) CreateInvoice(ctx context.Context, req challenge.Cr
 	rawInvoice := xor(secret[:])
 
 	inv := invoice{
-		RawInvoice: rawInvoice,
+		RawInvoice: base64.StdEncoding.EncodeToString(rawInvoice),
 		Amount:     req.Amount,
 	}
 
@@ -48,12 +48,12 @@ func (ln *TestLightningNode) CreateInvoice(ctx context.Context, req challenge.Cr
 
 	return challenge.InvoiceResponse{
 		PaymentHash: preimage.Hash(),
-		Invoice:     hex.EncodeToString(invoiceJSON),
+		Invoice:     base64.StdEncoding.EncodeToString(invoiceJSON),
 	}, nil
 }
 
 func (ln *TestLightningNode) PayInvoice(ctx context.Context, req challenge.PayInvoiceRequest) (challenge.PayInvoiceResponse, error) {
-	invoiceJSON, err := hex.DecodeString(req.Invoice)
+	invoiceJSON, err := base64.StdEncoding.DecodeString(req.Invoice)
 	if err != nil {
 		return challenge.PayInvoiceResponse{}, err
 	}
@@ -68,7 +68,9 @@ func (ln *TestLightningNode) PayInvoice(ctx context.Context, req challenge.PayIn
 		return challenge.PayInvoiceResponse{}, errors.New("insufficient balance")
 	}
 
-	preimage, err := lntypes.MakePreimage(xor(inv.RawInvoice))
+	decodedInvoice, _ := base64.StdEncoding.DecodeString(inv.RawInvoice)
+
+	preimage, err := lntypes.MakePreimage(xor(decodedInvoice))
 	if err != nil {
 		return challenge.PayInvoiceResponse{}, err
 	}

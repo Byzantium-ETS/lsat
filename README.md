@@ -4,11 +4,11 @@ Une implementation prototype d'un serveur d'authentification [L402](https://docs
 
 ## Modèle
 
-![mdd](out/CONTRIBUTING/MDD/MDD.svg)
+![mdd](out/CONTRIBUTING/MDD/MDD.png)
 
 ## Authorization
 
-![dss](out/CONTRIBUTING/Authorization/Authorization.svg)
+![dss](out/CONTRIBUTING/Authorization/Authorization.png)
 
 ## Ressources
 

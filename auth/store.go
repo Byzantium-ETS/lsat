@@ -6,6 +6,8 @@ import (
 	"lsat/macaroon"
 	"os"
 	"path/filepath"
+
+	"github.com/lightningnetwork/lnd/lntypes"
 )
 
 // Constants
@@ -13,16 +15,21 @@ const (
 	baseFileName = "l402.token."
 )
 
+type tokenJSON struct {
+	Macaroon macaroon.Macaroon `json:"macaroon"`
+	Preimage string            `json:"preimage"`
+}
+
 // TokenStore defines the interface for storing and retrieving tokens.
 type TokenStore interface {
 	// Stores the provided token with the specified ID in the store.
-	StoreToken(macaroon.TokenID, macaroon.Token) error
+	StoreToken(macaroon.TokenId, macaroon.Token) error
 
 	// Returns a reference to the token stored in the store for the specified ID.
-	GetToken(macaroon.TokenID) (*macaroon.Token, error)
+	GetToken(macaroon.TokenId) (*macaroon.Token, error)
 
 	// Removes the token from the store
-	RemoveToken(macaroon.TokenID) (*macaroon.Token, error)
+	RemoveToken(macaroon.TokenId) (*macaroon.Token, error)
 }
 
 // LocalStore implements the TokenStore interface using local file storage.
@@ -31,25 +38,30 @@ type LocalStore struct {
 }
 
 // Create a new LocalStore.
-func NewStore(directory string) (LocalStore, error) {
+func NewStore(directory string) (*LocalStore, error) {
 	// If the target path for the token store doesn't exist, then we'll
 	// create it now before we proceed.
 	if !fileExists(directory) {
 		if err := os.MkdirAll(directory, 0700); err != nil {
-			return LocalStore{}, err
+			return nil, err
 		}
 	}
 
-	return LocalStore{directory}, nil
+	return &LocalStore{directory}, nil
 }
 
 // Saves the token to a file.
-func (store *LocalStore) StoreToken(id macaroon.TokenID, token macaroon.Token) error {
+func (store *LocalStore) StoreToken(id macaroon.TokenId, token macaroon.Token) error {
 	// Construct the file path
 	filePath := store.FilePath(id)
 
+	storedToken := tokenJSON{
+		Macaroon: token.Macaroon,
+		Preimage: token.Preimage.String(),
+	}
+
 	// Marshal the token to JSON
-	data, err := json.Marshal(token)
+	data, err := json.Marshal(storedToken)
 	if err != nil {
 		return fmt.Errorf("failed to marshal token: %v", err)
 	}
@@ -64,10 +76,15 @@ func (store *LocalStore) StoreToken(id macaroon.TokenID, token macaroon.Token) e
 }
 
 // GetToken reads the token from a file where it should be saved, unmarshals it, and returns the token object.
-func (store *LocalStore) GetToken(id macaroon.TokenID) (*macaroon.Token, error) {
+func (store *LocalStore) GetToken(id macaroon.TokenId) (*macaroon.Token, error) {
 	// Construct the file path
 	filePath := store.FilePath(id)
 
+	return store.GetTokenFromPath(filePath)
+}
+
+// GetToken reads the token from a file where it should be saved, unmarshals it, and returns the token object.
+func (store *LocalStore) GetTokenFromPath(filePath string) (*macaroon.Token, error) {
 	// Read the JSON data from the file
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -75,16 +92,21 @@ func (store *LocalStore) GetToken(id macaroon.TokenID) (*macaroon.Token, error) 
 	}
 
 	// Unmarshal the JSON data into a Token object
-	var token macaroon.Token
+	var token tokenJSON
 	err = json.Unmarshal(data, &token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal token: %v", err)
 	}
 
-	return &token, nil
+	preimage, _ := lntypes.MakePreimageFromStr(token.Preimage)
+
+	return &macaroon.Token{
+		Macaroon: token.Macaroon,
+		Preimage: preimage,
+	}, nil
 }
 
-func (store *LocalStore) RemoveToken(id macaroon.TokenID) (*macaroon.Token, error) {
+func (store *LocalStore) RemoveToken(id macaroon.TokenId) (*macaroon.Token, error) {
 	token, err := store.GetToken(id)
 	if err != nil {
 		return nil, err
@@ -98,7 +120,7 @@ func (store *LocalStore) RemoveToken(id macaroon.TokenID) (*macaroon.Token, erro
 	return token, nil
 }
 
-func (store *LocalStore) FilePath(id macaroon.TokenID) string {
+func (store *LocalStore) FilePath(id macaroon.TokenId) string {
 	return filepath.Join(store.directory, baseFileName+id.Hash.String())
 }
 

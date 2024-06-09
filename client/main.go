@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"lsat/challenge"
@@ -9,8 +8,6 @@ import (
 	"lsat/mock"
 	"net/http"
 	"strings"
-
-	"github.com/lightningnetwork/lnd/lntypes"
 )
 
 const (
@@ -24,17 +21,22 @@ func main() {
 	client.sendTokenRequest()
 }
 
-func parseToken(mac string, invoice string) (macaroon.Token, error) {
+var lightningNode = mock.TestLightningNode{Balance: 1000}
+
+// Connect to the phoenix node
+// var lightningNode = phoenixd.NewPhoenixClient("baseUrl", "password")
+
+func parsePreToken(mac string, invoice string) (macaroon.PreToken, error) {
 	Macaroon, err := decodeMacaroon(mac)
 	if err != nil {
-		return macaroon.Token{}, fmt.Errorf("error decoding macaroon: %v", err)
+		return macaroon.PreToken{}, fmt.Errorf("error decoding macaroon: %v", err)
 	}
-	Preimage, err := decodePreimage(invoice)
-	if err != nil {
-		return macaroon.Token{}, fmt.Errorf("error decoding preimage: %v", err)
-	}
-
-	return macaroon.Token{Macaroon: Macaroon, Preimage: Preimage}, nil
+	return macaroon.PreToken{
+		Macaroon: Macaroon,
+		InvoiceResponse: challenge.InvoiceResponse{
+			Invoice: strings.Split(invoice, "\"")[1],
+		},
+	}, nil
 }
 
 func decodeMacaroon(input string) (macaroon.Macaroon, error) {
@@ -45,22 +47,6 @@ func decodeMacaroon(input string) (macaroon.Macaroon, error) {
 
 	macaroonStr := parts[1]
 	return macaroon.DecodeBase64(macaroonStr)
-}
-
-func decodePreimage(input string) (lntypes.Preimage, error) {
-	parts := strings.Split(input, "\"")
-	if len(parts) < 2 {
-		return lntypes.Preimage{}, fmt.Errorf("invalid preimage string")
-	}
-
-	invoiceStr := parts[1]
-	ln := mock.TestLightningNode{Balance: 100000}
-	payment, err := ln.PayInvoice(context.Background(), challenge.PayInvoiceRequest{Invoice: invoiceStr})
-	if err != nil {
-		return lntypes.Preimage{}, err
-	}
-
-	return payment.Preimage, nil
 }
 
 func (c *TestClient) sendTokenRequest() {
@@ -90,7 +76,13 @@ func (c *TestClient) sendTokenRequest() {
 			macaroon := parts[1]
 			invoice := parts[2]
 
-			token, err := parseToken(macaroon, invoice)
+			preToken, err := parsePreToken(macaroon, invoice)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			token, err := preToken.Pay(&lightningNode)
 			if err != nil {
 				fmt.Println(err)
 				return
@@ -105,11 +97,11 @@ func (c *TestClient) sendTokenRequest() {
 	}
 }
 
-func (c *TestClient) sendAuthorizationRequest(address string, token macaroon.Token) {
+func (c *TestClient) sendAuthorizationRequest(url string, token macaroon.Token) {
 	fmt.Println("Sending Authorization Request...")
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", address+"/protected", nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return
@@ -125,9 +117,51 @@ func (c *TestClient) sendAuthorizationRequest(address string, token macaroon.Tok
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
+
+		// Store the token for later use.
+		// store, err := auth.NewStore("./.store")
+		// if err != nil {
+		// 	fmt.Println("Error creating the store:", err)
+		// }
+		// store.StoreToken(token.Id(), token)
+
 		body, _ := io.ReadAll(resp.Body)
 		fmt.Println(string(body))
 	} else {
 		fmt.Println("Unexpected response status:", resp.Status)
 	}
 }
+
+// getArgumentText parses the --token flag and returns its value
+// func getArgumentText() string {
+// 	token := flag.String("token", "", "Path to the token file")
+// 	flag.Parse()
+
+// 	if *token == "" {
+// 		fmt.Println("No token filepath provided")
+// 		flag.Usage()
+// 		os.Exit(1)
+// 	}
+
+// 	return *token
+// }
+
+// shareToken stores a version of the token that can be shared with others.
+// func shareToken(store auth.TokenStore, token macaroon.Token) error {
+// 	// The time at which the new macaroon will expire.
+// 	expiryDate := time.Now().Add(5 * time.Minute)
+
+// 	// Creating the restricted macaroon
+// 	mac, err := token.Macaroon.Oven().WithThirdPartyCaveats(macaroon.NewCaveat(macaroon.ExpiryKey, expiryDate.Format(time.RFC3339))).Cook()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	// Update the macaroon in the token.
+// 	token.Macaroon = mac
+
+// 	// Store the token.
+// 	store.StoreToken(token.Id(), token)
+
+// 	return nil
+// }
