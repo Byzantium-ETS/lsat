@@ -95,7 +95,7 @@ class "InvoiceResponse" as PR {
 	invoice     string
 }
 
-Token "1" -- "1" Mac : > Serves
+Token "1" -- "1" Mac : > Contains
 pToken "1" -- "1" Mac : < Contains
 pToken "1" -- "1" PR : < Contains
 
