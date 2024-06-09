@@ -41,11 +41,11 @@ go run ./client/main.go
 
 ## Model
 
-![mdd](out/CONTRIBUTING/MDD/Domain Model.png)
+![mdd](<out/CONTRIBUTING/MDD/Domain Model.png>)
 
 ## Authorization
 
-![dss](out/CONTRIBUTING/Authorization/Authorization Flow.png)
+![dss](<out/CONTRIBUTING/Authorization/Authorization Flow.png>)
 
 ## Resources
 
