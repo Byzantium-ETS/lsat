@@ -2,53 +2,64 @@
 
 An implementation of the [L402](https://docs.lightning.engineering/the-lightning-network/l402) protocol.
 
+## Overview
+
+L402 is a protocol that leverages the capabilities of the Lightning Network for token minting and service authorization. This project provides fundamental utilities to work with L402 tokens, verify caveats, define services, and apply restrictions to macaroons.
+
+> [!NOTE]
+> Additionally, it offers an implementation of the [phoenixd](https://phoenix.acinq.co/server) API for integration with a real Lightning node.
+
 ## Usage
 
-This project doesn't provide yet a standalone [server]() or [client](). However it does provide the basic utilities to:
-
-* Mint L402 tokens
-* Verify caveats
-* Define services
-* Apply restrictions to macaroons
-
-It also provides an implementation of the [phoenixd](https://phoenix.acinq.co/server) API if you want to use it with a real node.
+Currently, this project does not offer standalone server or client implementations. However, it provides essential utilities and an example setup to get started.
 
 ### Example
 
-An example is avaible in `./server/` and `./client/`.
+The example available in the `./server/` and `./client/` directories demonstrates using a mocked Lightning node to issue and resolve challenges.
 
-> It uses a mocked lightning node to issue and resolve the challenge.
+To get started, follow these instructions:
 
-To get started follow these instructions:
+1. **Launch the Server**
 
-1. **Launch the server**
+   Open a terminal and run the following command to start the server:
 
-```sh
-# Launch the server
-go run ./server/main.go
-# 2024/06/09 09:21:20 Server launched at localhost:8080
-```
+   ```sh
+   go run ./server/main.go
+   # 2024/06/09 09:21:20 Server launched at localhost:8080
+   ```
 
-2. **Mint a token and access the service.**
+2. **Mint a Token and Access the Service**
 
-```sh
-go run ./client/main.go
-# Requesting Token...
-# {"user_id":"...","caveats": "...","signature":"..."}
-# Sending Authorization Request...
-# ...
-```
+   In another terminal, run the following command to mint a token and access the service:
+
+   ```sh
+   go run ./client/main.go
+   # Requesting Token...
+   # {"user_id":"...","caveats": "...","signature":"..."}
+   # Sending Authorization Request...
+   # ...
+   ```
 
 ## Model
 
-![mdd](<out/CONTRIBUTING/MDD/Domain Model.png>)
+The following diagram illustrates the domain model for the L402 implementation:
 
-## Authorization
+![Domain Model](<out/docs/MDD/Domain Model.png>)
 
-![dss](<out/CONTRIBUTING/Authorization/Authorization Flow.png>)
+## Authorization Flow
+
+The authorization flow for L402 tokens is depicted in the following diagram:
+
+![Authorization Flow](<out/docs/Authorization/Authorization Flow.png>)
 
 ## Resources
 
-- https://lightning.engineering/api-docs/api/lnd/
-- https://docs.lightning.engineering/the-lightning-network/l402
-- https://docs.lightning.engineering/the-lightning-network/multihop-payments
+For more information, refer to the following resources:
+
+- [Lightning Engineering API Documentation](https://lightning.engineering/api-docs/api/lnd/)
+- [L402 Protocol Documentation](https://docs.lightning.engineering/the-lightning-network/l402)
+- [Multihop Payments Documentation](https://docs.lightning.engineering/the-lightning-network/multihop-payments)
+
+## License
+
+This project is licensed under the terms of the [MIT License](LICENSE).
