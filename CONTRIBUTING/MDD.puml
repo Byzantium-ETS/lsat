@@ -1,76 +1,70 @@
-@startuml
-title Modèle du domaine
+@startuml Domain Model
+title Domain Model
 
 skinparam class {
-  BackgroundColor<<Serveur>> #FFF4C8
+  BackgroundColor<<L402>> #FFF4C8
 }
 
 hide stereotype
 hide empty members
   
-entity "UserId" as Uid
+class "UserId" as Uid
 
 entity "Secret" as Sec
 
-abstract class "User" as U {
-  + uid UserId
-  + secret Secret
-}
+entity "User" as U
 
-package Serveur {
-  class "Server" as Se <<Serveur>> {
-    - minter Minter
-    - router Router
+package L402 {
+  interface "SecretStore" as SS <<L402>> {
+	  NewSecret(uid UserId) (Secret, error)
+	  GetSecret(uid UserId) (Secret, error)
   }
   
-  interface "SecretStore" as SS <<Serveur>>
+  interface "Challenger" as Ch <<L402>> {
+	  Challenge(price uint64) (InvoiceResponse, error)
+  }
   
-  SS : + Secret(uid UserId) (Secret, error)
-  SS : + StoreToken(id TokenID, token Token) error
-  SS : + Tokens() *map[TokenID]Token
+  interface "ServiceManager" as SM <<L402>> {
+    Service(ServiceId) ([]Service, error)
+    VerifyCaveats(...Caveat) error
+  }
   
-  interface "Challenger" as Ch <<Serveur>>
+  interface "TokenStore" as TS {
+    StoreToken(TokenId, Token) error
+    GetToken(TokenId) (*Token, error)
+    RemoveToken(TokenId) (*Token, error)
+  }
   
-  Ch : + Challenge(price int64) PaymentRequest
-  
-  interface "ServiceManager" as SM <<Serveur>>
-  
-  SM : + Service(services ...String) ([]Service, error)
-  SM : + Capabilities(service String) ([]Caveats, error)
-  SM : + VerifyCaveats(caveats ...Caveat) error
-  SM : + GetResource(macaroon Macaroon) (Resource, error)
-  
-  class "Minter" as Mi <<Serveur>> {
+  class "Minter" as Mi <<L402>> {
     - service ServiceManager
     - challenger Challenger
-    - store SecretStore
+    - secrets SecretStore
   }
   
   Mi : + MintToken(uid UserId, services ...Service) (PreToken, error)
   Mi : - AuthToken(lsat *Token) error
-
 }
 
 
-interface "LightningNode" as LN
-
-LN : SendPayment(PaymentRequest) (Preimage, error)
-LN : CreateInvoice(InvoiceBuilder) (PaymentRequest, error)
+interface "LightningNode" as LN {
+  SendPayment(PayInvoiceRequest) (PayInvoiceResponse, error)
+  CreateInvoice(CreateInvoiceRequest) (invoiceResponse, error)
+}
   
 class "Token" as Token {
   macaroon Macaroon
-  preimage String
+  preimage string
 }
     
 class "PreToken" as pToken {
   macaroon Macaroon
-  invoice String
+  invoice InvoiceResponse
 }
   
     
 class "Macaroon" as Mac {
   caveats []Caveat
-  signature String
+  signature Hash
   user_id UserId
 }
   
@@ -81,57 +75,59 @@ class "TokenId" as Tid {
 }
   
 class "Caveat" as Ca {
-  key String
-  value String
+  key string
+  value string
 }
 
+class "ServiceId" as SerId {
+  name string
+  tier uint8
+}
   
 class "Service" as Ser {
-  name String
+  name string
   price int64
+  tier uint8
 }
 
-class "Resource" as Rs {
-  content []byte
-  type String
-}
-  
-class "PaymentRequest" as PR {
-  invoice String
+class "InvoiceResponse" as PR {
+	paymentHash Hash
+	invoice     string
 }
 
-Token "1" -- "1" Mac : > Sert
-pToken "1" -- "1" Token : > Génére
+Token "1" -- "1" Mac : > Serves
+pToken "1" -- "1" Mac : < Contains
+pToken "1" -- "1" PR : < Contains
+
+Tid "1" -- "1" Token : > Identifies 
+Mac "1" -- "*" Ser : > Describes
+Ca "*" -- "*" Mac : > Restricts
+
+Mi "1" -- "*" Ser : > Authorizes
 Mi "1" -- "*" pToken : > Mint
-PR "1" -- "1" pToken : > Compose
-Mac "1" -- "1" pToken : > Compose
+Mi "1" -- "1" Ch : > Uses
+Mi "1" -- "1" SS : > Uses
+Mi "1" -- "1" SM : > Uses
 
-Tid "1" -- "1" Token : > Identifie 
-Mac "1" -- "*" Ser : > Authentifie
-Ca "*" -- "*" Mac : > Restreint
+SS "1" -- "*" Sec : > Contains
+SS "1" -- "*" Uid : > Uses
+Sec "1" -- "*" Mac : > Protects
 
-Mi "1" -- "1" Ch : > Utilise
-Mi "1" -- "1" SS : > Utilise
-Mi "1" -- "1" SM : > Utilise
+Uid "1" -- "1" U : > Identifies
+U "1" -- "1" Sec : > Posseses
+U "1" -- "*" Token : > Posseses
 
-SS "1" -- "*" U : > Contient
-SS "1" -- "*" Token : > Contient
-SS "1" -- "*" Uid : > Utilise
-SS "1" -- "*" Tid : > Utilise
-U "1" -- "1" Sec : > Possède
-Uid "1" -- "1" U : > Identifie
-Sec "1" -- "*" Mac : > Génére
+TS "1" -- "*" Tid : > Uses
+TS "1" -- "1" Token : > Stores
 
-Ser "1" -- "*" SM : < Gère
-Ch "1" -- "*" PR : > Construit
+SM "1" -- "*" SerId : > Uses
+SM "1" -- "*" Ser : > Manages
+SM "1" -- "*" Mac : > Uses
+SM "1" -- "*" Ca : > Uses
+SerId "1" -- "1" Ser : > Identifies
 
-Se "1" -- "1" Mi : > Contient
-Se "1" -- "*" Ser : > Offre
+LN "1" -- "*" Ch : < Uses
+LN "1" -- "*" PR : > Issues
 
-LN "1" -- "*" Ch : > Devient
-LN "1" -- "*" PR : > Crée
-
-Ser "1" -- "1" Rs : > Offre
-Mi "1" -- "*" Ser : > Authentifie
 
 @enduml
