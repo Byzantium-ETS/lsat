@@ -21,7 +21,7 @@ func main() {
 	client.sendTokenRequest()
 }
 
-var lightningNode = mock.TestLightningNode{Balance: 1000}
+var lightningNode = mock.TestLightningNode{Balance: 10000}
 
 // Connect to the phoenix node
 // var lightningNode = phoenixd.NewPhoenixClient("baseUrl", "password")
