@@ -14,11 +14,10 @@ const (
 	sigErr  = "the macaroon has an invalid signature"
 )
 
-// https://github.com/lightninglabs/aperture/blob/master/mint/mint.go#L65
 type Minter struct {
-	service    service.ServiceManager // Une abstraction des services offert par une application
-	secrets    secrets.SecretStore    // La source des secrets des lsats qui seront créé
-	challenger challenge.Challenger   // Crée les challenges sous la forme d'invoices
+	service    service.ServiceManager
+	secrets    secrets.SecretStore
+	challenger challenge.Challenger
 }
 
 func NewMinter(service service.ServiceManager, secrets secrets.SecretStore, challenger challenge.Challenger) Minter {

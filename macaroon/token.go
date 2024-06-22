@@ -15,7 +15,7 @@ const (
 
 // A service token.
 //
-// It holds the macaroon and its secret.
+// It holds the macaroon and its premiage.
 type Token struct {
 	Macaroon Macaroon         // The macaroon.
 	Preimage lntypes.Preimage // The secret of the transaction.

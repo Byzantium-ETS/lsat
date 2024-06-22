@@ -4,7 +4,7 @@ An implementation of the [L402](https://docs.lightning.engineering/the-lightning
 
 ## Overview
 
-L402 is a protocol that leverages the capabilities of the Lightning Network for token minting and service authorization. This project provides fundamental utilities to work with L402 tokens, verify caveats, define services, and apply restrictions to macaroons.
+L402 is a protocol that leverages the capabilities of the Lightning Network for token minting and service authorization to enable the monetization of APIs through Bitcoin.
 
 > [!NOTE]
 > Additionally, it offers an implementation of the [phoenixd](https://phoenix.acinq.co/server) API for integration with a real Lightning node.
