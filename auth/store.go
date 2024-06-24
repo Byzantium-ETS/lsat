@@ -16,8 +16,8 @@ const (
 )
 
 type tokenJSON struct {
-	Macaroon macaroon.Macaroon `json:"macaroon"`
-	Preimage string            `json:"preimage"`
+	Macaroon string `json:"macaroon"`
+	Preimage string `json:"preimage"`
 }
 
 // TokenStore defines the interface for storing and retrieving tokens.
@@ -56,7 +56,7 @@ func (store *LocalStore) StoreToken(id macaroon.TokenId, token macaroon.Token) e
 	filePath := store.FilePath(id)
 
 	storedToken := tokenJSON{
-		Macaroon: token.Macaroon,
+		Macaroon: token.Macaroon.String(),
 		Preimage: token.Preimage.String(),
 	}
 
@@ -65,6 +65,8 @@ func (store *LocalStore) StoreToken(id macaroon.TokenId, token macaroon.Token) e
 	if err != nil {
 		return fmt.Errorf("failed to marshal token: %v", err)
 	}
+
+	fmt.Println(string(data))
 
 	// Write the JSON data to the file
 	err = os.WriteFile(filePath, data, 0644)
@@ -100,8 +102,13 @@ func (store *LocalStore) GetTokenFromPath(filePath string) (*macaroon.Token, err
 
 	preimage, _ := lntypes.MakePreimageFromStr(token.Preimage)
 
+	mac, err := macaroon.DecodeBase64(token.Macaroon)
+	if err != nil {
+		return nil, err
+	}
+
 	return &macaroon.Token{
-		Macaroon: token.Macaroon,
+		Macaroon: mac,
 		Preimage: preimage,
 	}, nil
 }
