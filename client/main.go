@@ -1,27 +1,44 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
+	"log"
+	"lsat/auth"
 	"lsat/challenge"
 	"lsat/macaroon"
 	"lsat/mock"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const (
 	authURL = "http://localhost:8080"
 )
 
-type TestClient struct{}
-
-func main() {
-	client := TestClient{}
-	client.sendTokenRequest()
+type TestClient struct {
+	tokenPath string
 }
 
-var lightningNode = mock.TestLightningNode{Balance: 1000}
+func main() {
+	client := TestClient{
+		tokenPath: getTokenPath(),
+	}
+	if client.tokenPath == "" {
+		client.sendTokenRequest()
+	} else {
+		store, _ := auth.NewStore("./.store")
+		token, err := store.GetTokenFromPath(client.tokenPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		client.sendAuthorizationRequest(authURL, *token)
+	}
+}
+
+var lightningNode = mock.TestLightningNode{Balance: 10000}
 
 // Connect to the phoenix node
 // var lightningNode = phoenixd.NewPhoenixClient("baseUrl", "password")
@@ -119,11 +136,11 @@ func (c *TestClient) sendAuthorizationRequest(url string, token macaroon.Token) 
 	if resp.StatusCode == http.StatusOK {
 
 		// Store the token for later use.
-		// store, err := auth.NewStore("./.store")
-		// if err != nil {
-		// 	fmt.Println("Error creating the store:", err)
-		// }
-		// store.StoreToken(token.Id(), token)
+		store, err := auth.NewStore("./.store")
+		if err != nil {
+			fmt.Println("Error creating the store:", err)
+		}
+		shareToken(store, token)
 
 		body, _ := io.ReadAll(resp.Body)
 		fmt.Println(string(body))
@@ -132,36 +149,30 @@ func (c *TestClient) sendAuthorizationRequest(url string, token macaroon.Token) 
 	}
 }
 
-// getArgumentText parses the --token flag and returns its value
-// func getArgumentText() string {
-// 	token := flag.String("token", "", "Path to the token file")
-// 	flag.Parse()
+// getTokenPath parses the --token flag and returns its value
+func getTokenPath() string {
+	token := flag.String("token", "", "Path to the token file")
+	flag.Parse()
 
-// 	if *token == "" {
-// 		fmt.Println("No token filepath provided")
-// 		flag.Usage()
-// 		os.Exit(1)
-// 	}
-
-// 	return *token
-// }
+	return *token
+}
 
 // shareToken stores a version of the token that can be shared with others.
-// func shareToken(store auth.TokenStore, token macaroon.Token) error {
-// 	// The time at which the new macaroon will expire.
-// 	expiryDate := time.Now().Add(5 * time.Minute)
+func shareToken(store auth.TokenStore, token macaroon.Token) error {
+	// The time at which the new macaroon will expire.
+	expiryDate := time.Now().Add(5 * time.Minute)
 
-// 	// Creating the restricted macaroon
-// 	mac, err := token.Macaroon.Oven().WithThirdPartyCaveats(macaroon.NewCaveat(macaroon.ExpiryKey, expiryDate.Format(time.RFC3339))).Cook()
-// 	if err != nil {
-// 		return err
-// 	}
+	// Creating the restricted macaroon
+	mac, err := token.Macaroon.Oven().WithThirdPartyCaveats(macaroon.NewCaveat(macaroon.ExpiryDateKey, expiryDate.Format(time.RFC3339))).Cook()
+	if err != nil {
+		return err
+	}
 
-// 	// Update the macaroon in the token.
-// 	token.Macaroon = mac
+	// Update the macaroon in the token.
+	token.Macaroon = mac
 
-// 	// Store the token.
-// 	store.StoreToken(token.Id(), token)
+	// Store the token.
+	store.StoreToken(token.Id(), token)
 
-// 	return nil
-// }
+	return nil
+}

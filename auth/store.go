@@ -66,6 +66,8 @@ func (store *LocalStore) StoreToken(id macaroon.TokenId, token macaroon.Token) e
 		return fmt.Errorf("failed to marshal token: %v", err)
 	}
 
+	fmt.Println(string(data))
+
 	// Write the JSON data to the file
 	err = os.WriteFile(filePath, data, 0644)
 	if err != nil {
@@ -106,6 +108,11 @@ func (store *LocalStore) GetTokenFromPath(filePath string) (*macaroon.Token, err
 
 	// Build a typed macaroon from the JSON object.
 	mac, err := token.Macaroon.Unwrap()
+	if err != nil {
+		return nil, err
+	}
+
+	mac, err := macaroon.DecodeBase64(token.Macaroon)
 	if err != nil {
 		return nil, err
 	}

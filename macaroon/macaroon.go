@@ -9,10 +9,6 @@ import (
 	"github.com/lightningnetwork/lnd/lntypes"
 )
 
-const (
-	valueErr = "no caveat found with given key"
-)
-
 // Version is an alias for the Macaroon version.
 type Version = int8
 

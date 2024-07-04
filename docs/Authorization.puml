@@ -1,4 +1,4 @@
-@startuml
+@startuml Authorization Flow
 title L402 : Service authorization flow
 
 hide stereotype

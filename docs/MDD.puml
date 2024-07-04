@@ -1,0 +1,133 @@
+@startuml Domain Model
+title Domain Model
+
+skinparam class {
+  BackgroundColor<<L402>> #FFF4C8
+}
+
+hide stereotype
+hide empty members
+  
+class "UserId" as Uid
+
+entity "Secret" as Sec
+
+entity "User" as U
+
+package L402 {
+  interface "SecretStore" as SS <<L402>> {
+	  NewSecret(uid UserId) (Secret, error)
+	  GetSecret(uid UserId) (Secret, error)
+  }
+  
+  interface "Challenger" as Ch <<L402>> {
+	  Challenge(price uint64) (InvoiceResponse, error)
+  }
+  
+  interface "ServiceManager" as SM <<L402>> {
+    Service(ServiceId) ([]Service, error)
+    VerifyCaveats(...Caveat) error
+  }
+  
+  interface "TokenStore" as TS {
+    StoreToken(TokenId, Token) error
+    GetToken(TokenId) (*Token, error)
+    RemoveToken(TokenId) (*Token, error)
+  }
+  
+  class "Minter" as Mi <<L402>> {
+    - service ServiceManager
+    - challenger Challenger
+    - secrets SecretStore
+  }
+  
+  Mi : + MintToken(uid UserId, services ...Service) (PreToken, error)
+  Mi : - AuthToken(lsat *Token) error
+}
+
+
+interface "LightningNode" as LN {
+  SendPayment(PayInvoiceRequest) (PayInvoiceResponse, error)
+  CreateInvoice(CreateInvoiceRequest) (invoiceResponse, error)
+}
+  
+class "Token" as Token {
+  macaroon Macaroon
+  preimage string
+}
+    
+class "PreToken" as pToken {
+  macaroon Macaroon
+  invoice InvoiceResponse
+}
+  
+    
+class "Macaroon" as Mac {
+  caveats []Caveat
+  signature Hash
+  user_id UserId
+}
+  
+class "TokenId" as Tid {
+  hash Hash
+  uid UserId
+  version Version
+}
+  
+class "Caveat" as Ca {
+  key string
+  value string
+}
+
+class "ServiceId" as SerId {
+  name string
+  tier uint8
+}
+  
+class "Service" as Ser {
+  name string
+  price int64
+  tier uint8
+}
+
+class "InvoiceResponse" as PR {
+	paymentHash Hash
+	invoice     string
+}
+
+Token "1" -- "1" Mac : > Contains
+pToken "1" -- "1" Mac : < Contains
+pToken "1" -- "1" PR : < Contains
+
+Tid "1" -- "1" Token : > Identifies 
+Mac "1" -- "*" Ser : > Describes
+Ca "*" -- "*" Mac : > Restricts
+
+Mi "1" -- "*" Ser : > Authorizes
+Mi "1" -- "*" pToken : > Mint
+Mi "1" -- "1" Ch : > Uses
+Mi "1" -- "1" SS : > Uses
+Mi "1" -- "1" SM : > Uses
+
+SS "1" -- "*" Sec : > Contains
+SS "1" -- "*" Uid : > Uses
+Sec "1" -- "*" Mac : > Protects
+
+Uid "1" -- "1" U : > Identifies
+U "1" -- "1" Sec : > Posseses
+U "1" -- "*" Token : > Posseses
+
+TS "1" -- "*" Tid : > Uses
+TS "1" -- "1" Token : > Stores
+
+SM "1" -- "*" SerId : > Uses
+SM "1" -- "*" Ser : > Manages
+SM "1" -- "*" Mac : > Uses
+SM "1" -- "*" Ca : > Uses
+SerId "1" -- "1" Ser : > Identifies
+
+LN "1" -- "*" Ch : < Uses
+LN "1" -- "*" PR : > Issues
+
+
+@enduml
