@@ -29,10 +29,25 @@ func MakeUserId(newUserId []byte) (UserId, error) {
 			nhlen, SecretSize)
 	}
 
-	var uid UserId
-	copy(uid[:], newUserId) // Copy the provided slice into the UserId byte array.
+	var user_id UserId
+	copy(user_id[:], newUserId) // Copy the provided slice into the UserId byte array.
 
-	return uid, nil
+	return user_id, nil
+}
+
+// MakeUserIdFromStr creates a UserId from a hex string.
+func MakeUserIdFromStr(newuser string) (UserId, error) {
+	if len(newuser) != SecretSize*2 {
+		return UserId{}, fmt.Errorf("invalid user_id string length of %v, "+
+			"want %v", len(newuser), SecretSize*2)
+	}
+
+	user_id, err := hex.DecodeString(newuser)
+	if err != nil {
+		return UserId{}, err
+	}
+
+	return MakeUserId(user_id)
 }
 
 // NewSecret generates a new random Secret.

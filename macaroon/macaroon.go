@@ -96,6 +96,25 @@ func (mac MacaroonJSON) String() string {
 	return string(jsonData)
 }
 
+// Unwrap get a Macaroon from the JSON object.
+func (mac MacaroonJSON) Unwrap() (Macaroon, error) {
+	signature, err := lntypes.MakeHashFromStr(mac.Signature)
+	if err != nil {
+		return Macaroon{}, err
+	}
+
+	userId, err := secrets.MakeUserIdFromStr(mac.UserId)
+	if err != nil {
+		return Macaroon{}, err
+	}
+
+	return Macaroon{
+		userId:    userId,
+		signature: signature,
+		caveats:   mac.Caveats,
+	}, nil
+}
+
 func (mac *Macaroon) MarshalJSON() ([]byte, error) {
 	return json.Marshal(mac.ToJSON())
 }
