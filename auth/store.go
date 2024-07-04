@@ -112,11 +112,6 @@ func (store *LocalStore) GetTokenFromPath(filePath string) (*macaroon.Token, err
 		return nil, err
 	}
 
-	mac, err := macaroon.DecodeBase64(token.Macaroon)
-	if err != nil {
-		return nil, err
-	}
-
 	return &macaroon.Token{
 		Macaroon: mac,
 		Preimage: preimage,
