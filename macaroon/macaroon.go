@@ -87,7 +87,7 @@ func (mac *Macaroon) ToJSON() MacaroonJSON {
 
 func (mac MacaroonJSON) String() string {
 	// Marshal the Macaroon struct to JSON
-	jsonData, err := json.Marshal(mac)
+	jsonData, err := json.MarshalIndent(mac, "", "  ")
 
 	if err != nil {
 		panic(err)

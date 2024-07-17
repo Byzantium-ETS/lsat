@@ -61,7 +61,7 @@ func (store *LocalStore) StoreToken(id macaroon.TokenId, token macaroon.Token) e
 	}
 
 	// Marshal the token to JSON
-	data, err := json.Marshal(storedToken)
+	data, err := json.MarshalIndent(storedToken, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal token: %v", err)
 	}

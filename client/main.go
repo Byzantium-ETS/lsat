@@ -140,10 +140,12 @@ func (c *TestClient) sendAuthorizationRequest(url string, token macaroon.Token) 
 		if err != nil {
 			fmt.Println("Error creating the store:", err)
 		}
-		shareToken(store, token)
+		if c.tokenPath == "" {
+			shareToken(store, token)
+		}
 
-		body, _ := io.ReadAll(resp.Body)
-		fmt.Println(string(body))
+		// body, _ := io.ReadAll(resp.Body)
+		fmt.Println(resp.Status)
 	} else {
 		fmt.Println("Unexpected response status:", resp.Status)
 	}

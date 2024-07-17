@@ -24,7 +24,7 @@ const (
 	macaroonHeader    = "L402"
 	defaultService    = "image"
 	authFailedMessage = "Authentication failed!"
-	redirectURL       = "https://picsum.photos/500"
+	redirectURL       = "https://picsum.photos/1000"
 )
 
 var serviceName = getEnv("SERVICE_NAME", defaultService)
