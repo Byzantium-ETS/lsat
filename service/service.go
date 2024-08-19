@@ -29,10 +29,12 @@ type ServiceId struct {
 	Tier Tier   // The tier or level of the service.
 }
 
+// Create a new service configuration.
 func NewService(Name string, Price uint64) Service {
 	return Service{Name: Name, Price: Price, Tier: BaseTier, Duration: time.Hour}
 }
 
+// Create a new service identifier.
 func NewId(Name string, Tier Tier) ServiceId {
 	return ServiceId{Name, Tier}
 }
