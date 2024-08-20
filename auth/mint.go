@@ -14,6 +14,7 @@ const (
 	sigErr  = "the macaroon has an invalid signature"
 )
 
+// Minter is a struct that contains the necessary information to mint a new macaroon.
 type Minter struct {
 	service    service.ServiceManager
 	secrets    secrets.SecretStore
@@ -42,7 +43,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_id service.ServiceId
 	token := macaroon.PreToken{}
 
 	// Fetch information about the requested services.
-	service, err := minter.service.Service(service_id)
+	service, err := minter.service.GetService(service_id)
 	if err != nil {
 		return token, err
 	}
@@ -84,25 +85,20 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_id service.ServiceId
 	return token, nil
 }
 
-// Authentify the validity of the token.
-func (minter *Minter) AuthToken(lsat *macaroon.Token) error {
+// AuthorizeToken returns an error if the token is invalid.
+func (minter *Minter) AuthToken(token *macaroon.Token) error {
 	// Verify the preimage
-	paymentHash := lsat.Macaroon.GetValue(macaroon.PaymentHashKey)
-	if len(paymentHash) == 0 {
+	paymentHashIter := token.Macaroon.GetValue(macaroon.PaymentHashKey)
+	if !paymentHashIter.HasNext() {
 		return errors.New(permErr)
 	}
 
-	if lsat.Preimage.Hash().String() != paymentHash[0] {
+	if token.Preimage.Hash().String() != paymentHashIter.Next() {
 		return errors.New(hashErr)
 	}
 
 	// Validate the LSAT's Macaroon using the authentication service.
-	err := minter.AuthMacaroon(&lsat.Macaroon)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return minter.AuthMacaroon(&token.Macaroon)
 }
 
 // Verifies that signature and caveats are valid.
@@ -111,12 +107,13 @@ func (minter *Minter) AuthMacaroon(mac *macaroon.Macaroon) error {
 	oven := macaroon.NewOven(secret)
 	nmac, _ := oven.WithThirdPartyCaveats(mac.Caveats()...).Cook()
 
+	// Verify the signature.
 	if mac.Signature() != nmac.Signature() {
-		return errors.New(sigErr) // Faudrait des erreurs
+		return errors.New(sigErr)
 	}
 
-	err := minter.service.VerifyCaveats(mac.Caveats()...) /// Check the validity of the caveats
-
+	// Verify the caveats.
+	err := minter.service.VerifyCaveats(mac.Caveats()...)
 	if err != nil {
 		return err
 	}

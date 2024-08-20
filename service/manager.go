@@ -1,10 +1,8 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"lsat/macaroon"
-	"time"
 )
 
 const (
@@ -14,8 +12,8 @@ const (
 
 // An interface defining methods for managing services and their capabilities.
 type ServiceManager interface {
-	// Services retrieves information about services with the provided names.
-	Service(ServiceId) (Service, error)
+	// GetServices retrieves information about services with the provided names.
+	GetService(ServiceId) (Service, error)
 
 	// VerifyCaveats checks the validity of the provided caveats.
 	VerifyCaveats(caveats ...macaroon.Caveat) error
@@ -35,8 +33,8 @@ func NewConfig(services []Service) *Config {
 	return &Config{services: serviceMap}
 }
 
-// Service retrieves information about a service with the provided name.
-func (c *Config) Service(id ServiceId) (Service, error) {
+// GetService retrieves information about a service with the provided name.
+func (c *Config) GetService(id ServiceId) (Service, error) {
 	service, exists := c.services[id.String()]
 	if !exists {
 		return Service{}, fmt.Errorf("service not found: %s", id.String())
@@ -46,47 +44,16 @@ func (c *Config) Service(id ServiceId) (Service, error) {
 
 // VerifyCaveats checks the validity of the provided caveats.
 func (c *Config) VerifyCaveats(caveats ...macaroon.Caveat) error {
-	err := c.checkExpiry(caveats...)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *Config) checkExpiry(caveats ...macaroon.Caveat) error {
-	now := time.Now()
-	var previousExpiry time.Time
-
-	for i, expiryTime := range macaroon.GetValue(macaroon.ExpiryDateKey, caveats) {
-		// Parse the value of the time caveat as a time.Time.
-		expiry, err := time.Parse(time.RFC3339, expiryTime)
-
-		// If there is an error parsing the time, return the error.
-		if err != nil {
-			return err
-		}
-
-		if i == 0 {
-			// The first expiry_date should be after now.
-			if now.After(expiry) {
-				return errors.New(timeErr)
-			}
-		} else {
-			// Each following expiry_date should be more strict or before the previous expiry date.
-			if expiry.After(previousExpiry) {
-				return fmt.Errorf("%s is not more strict than the previous one", macaroon.ExpiryDateKey)
+	iter := macaroon.NewIterator(macaroon.ServiceKey, caveats)
+	for iter.HasNext() {
+		service_id := iter.Next()
+		service, _ := c.services[service_id]
+		for _, condition := range service.Conditions {
+			err := condition.Satisfy(caveats)
+			if err != nil {
+				return err
 			}
 		}
-
-		// Update previousExpiry to the current expiry.
-		previousExpiry = expiry
-	}
-
-	// now must be before all the expiry_date.
-	if now.After(previousExpiry) {
-		return errors.New(timeErr)
 	}
 
 	return nil

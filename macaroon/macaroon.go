@@ -39,8 +39,8 @@ func (mac *Macaroon) Signature() lntypes.Hash {
 }
 
 // Returns the Value of the caveat with the given Key
-func (mac *Macaroon) GetValue(key string) []string {
-	return GetValue(key, mac.caveats)
+func (mac *Macaroon) GetValue(key string) ValueIterator {
+	return NewIterator(key, mac.caveats)
 }
 
 func (mac Macaroon) String() string {

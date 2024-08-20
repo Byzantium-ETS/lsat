@@ -3,9 +3,12 @@ package tests
 import (
 	"lsat/macaroon"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
+
+var caveat macaroon.Caveat = macaroon.NewCaveat(macaroon.ExpiryDateKey, time.Now().Add(time.Hour).Format(time.RFC3339))
 
 func TestSignature(t *testing.T) {
 	uid := secretStore.NewUser()
@@ -30,6 +33,25 @@ func TestSignature(t *testing.T) {
 
 	if signaturea == signatureb {
 		t.Error("Two users cannot produce the same signature for the same given caveats.")
+	}
+}
+
+func TestValueIter(t *testing.T) {
+	uid := secretStore.NewUser()
+
+	secret, _ := secretStore.NewSecret(uid)
+
+	oven := macaroon.NewOven(secret)
+
+	mac, _ := oven.WithUserId(uid).WithThirdPartyCaveats(macaroon.NewCaveat("name", "bob")).WithThirdPartyCaveats(caveat).Cook()
+
+	iter := mac.GetValue(macaroon.ExpiryDateKey)
+	expiryDate := iter.Next()
+
+	t.Log(expiryDate)
+
+	if expiryDate != caveat.Value {
+		t.Error("The expiry date is not the same as the one in the caveat.")
 	}
 }
 

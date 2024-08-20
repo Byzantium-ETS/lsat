@@ -1,9 +1,7 @@
 package tests
 
 import (
-	"lsat/auth"
 	"lsat/macaroon"
-	"lsat/mock"
 	"lsat/service"
 	"testing"
 	"time"
@@ -18,36 +16,102 @@ const (
 
 var testService service.Service = service.NewService("image", 1000)
 
-var caveat macaroon.Caveat = macaroon.NewCaveat("expiry", "12:00 PM")
-
-func TestVerifyCaveats(t *testing.T) {
+func TestExpiryValid(t *testing.T) {
 	serviceLimiter := service.NewConfig([]service.Service{
 		{
 			Name:     serviceName,
 			Price:    servicePrice,
 			Tier:     service.BaseTier,
 			Duration: time.Hour,
+			Conditions: []service.Condition{
+				service.Timeout{},
+			},
 		},
 	})
 
-	uid := secretStore.NewUser()
+	caveat := macaroon.NewCaveat(macaroon.ExpiryDateKey, time.Now().Add(time.Hour).Format(time.RFC3339))
 
-	minter := auth.NewMinter(serviceLimiter, secretStore, mock.NewChallenger())
-
-	preToken, err := minter.MintToken(uid, service.NewId(serviceName, 0))
+	err := serviceLimiter.VerifyCaveats(macaroon.NewCaveat("service", testService.Id().String()), caveat)
 
 	if err != nil {
 		t.Error(err)
 	}
+}
 
-	mac := preToken.Macaroon
+func TestExpiryInvalid(t *testing.T) {
+	serviceLimiter := service.NewConfig([]service.Service{
+		{
+			Name:     serviceName,
+			Price:    servicePrice,
+			Tier:     service.BaseTier,
+			Duration: time.Hour,
+			Conditions: []service.Condition{
+				service.Timeout{},
+			},
+		},
+	})
 
-	t.Log(mac.ToJSON())
+	caveat := macaroon.NewCaveat(macaroon.ExpiryDateKey, time.Now().Add(-time.Hour).Format(time.RFC3339))
 
-	err = serviceLimiter.VerifyCaveats(mac.Caveats()...)
+	t.Log(caveat)
+
+	err := serviceLimiter.VerifyCaveats(macaroon.NewCaveat("service", testService.Id().String()), caveat)
+
+	if err == nil {
+		t.Error("Expiry should not be valid")
+	}
+}
+
+func TestCapabilities(t *testing.T) {
+	serviceLimiter := service.NewConfig([]service.Service{
+		{
+			Name:     serviceName,
+			Price:    servicePrice,
+			Tier:     service.BaseTier,
+			Duration: time.Hour,
+			Conditions: []service.Condition{
+				service.Capabilities{Key: "resolution"},
+			},
+		},
+	})
+
+	err := serviceLimiter.VerifyCaveats(
+		macaroon.NewCaveat("service", testService.Id().String()),
+		macaroon.NewCaveat("resolution", "1024x768, 800x600"),
+		macaroon.NewCaveat("format", "jpeg, png"),
+		macaroon.NewCaveat("resolution", "1024x768, 800x600, 1920x1080"),
+	)
 
 	if err != nil {
-		t.Error(err)
+		t.Log(err)
+	} else {
+		t.Error("Capabilities should not be valid")
+	}
+}
+
+func TestUniqueKey(t *testing.T) {
+	serviceLimiter := service.NewConfig([]service.Service{
+		{
+			Name:     serviceName,
+			Price:    servicePrice,
+			Tier:     service.BaseTier,
+			Duration: time.Hour,
+			Conditions: []service.Condition{
+				service.Capabilities{Key: "url"},
+			},
+		},
+	})
+
+	err := serviceLimiter.VerifyCaveats(
+		macaroon.NewCaveat("service", testService.Id().String()),
+		macaroon.NewCaveat("url", "google.com"),
+		macaroon.NewCaveat("url", "facebook.com"),
+	)
+
+	if err != nil {
+		t.Log(err)
+	} else {
+		t.Error("The verification should fail")
 	}
 }
 
@@ -63,7 +127,7 @@ func TestService(t *testing.T) {
 
 	serviceLimiter := service.NewConfig([]service.Service{targetService})
 
-	service, err := serviceLimiter.Service(service_id)
+	service, err := serviceLimiter.GetService(service_id)
 
 	if err != nil {
 		t.Error(err)

@@ -42,14 +42,37 @@ func (caveat *Caveat) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Returns the Value of the caveat with the given Key
-func GetValue(key string, caveats []Caveat) []string {
-	values := make([]string, 0)
-	for _, caveat := range caveats {
-		if caveat.Key == key {
-			values = append(values, caveat.Value)
+// ValueIterator is a helper struct to iterate over the values of a specific key in a sequence of caveats.
+type ValueIterator struct {
+	key     string
+	caveats []Caveat
+}
+
+// Create a new servicce iterator.
+func NewIterator(key string, caveats []Caveat) ValueIterator {
+	return ValueIterator{key, caveats}
+}
+
+// HasNext checks if there are more caveats with the specified key.
+func (vi *ValueIterator) HasNext() bool {
+	for i, caveat := range vi.caveats {
+		if caveat.Key == vi.key {
+			vi.caveats = vi.caveats[i:]
+			return true
 		}
 	}
+	return false
+}
 
-	return values
+// Next returns the value of the next caveat with the specified key.
+func (vi *ValueIterator) Next() string {
+	for i, caveat := range vi.caveats {
+		if caveat.Key == vi.key {
+			// Extract the value and remove the current caveat from the slice.
+			value := caveat.Value
+			vi.caveats = vi.caveats[i+1:]
+			return value
+		}
+	}
+	return ""
 }
