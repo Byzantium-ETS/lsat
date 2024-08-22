@@ -44,13 +44,13 @@ To get started, follow these instructions:
 
 The following diagram illustrates the domain model for the L402 implementation:
 
-![Domain Model](<out/docs/MDD/Domain Model.png>)
+![Domain Model](<out/MDD/Domain Model.png>)
 
 ## Authorization Flow
 
 The authorization flow for L402 tokens is depicted in the following diagram:
 
-![Authorization Flow](<out/docs/Authorization/Authorization Flow.png>)
+![Authorization Flow](<out/Authorization/Authorization Flow.png>)
 
 ## Resources
 
