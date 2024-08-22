@@ -35,11 +35,15 @@ alt First time user
   deactivate Auth
 
 else User with a token
-  C -> Res: GET /protected, access token
-  activate Res
-    Res -> Res: Check token, validate caveats
-    C <-- Res: Protected
-  deactivate Res
+  C -> Auth: GET /protected, access token
+  activate Auth
+    Auth -> Res
+    activate Res
+      Res -> Res: Check token, validate caveats
+      Auth <-- Res: Protected
+    deactivate Res
+    C <- Auth
+  deactivate Auth
 
 end
 
