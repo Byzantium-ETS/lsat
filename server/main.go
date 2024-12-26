@@ -24,21 +24,21 @@ const (
 	macaroonHeader    = "L402"
 	defaultService    = "image"
 	authFailedMessage = "Authentication failed!"
-	redirectURL       = "https://picsum.photos/1000"
 )
 
-var serviceName = getEnv("SERVICE_NAME", defaultService)
-
 // Connect to the phoenix node
-// var lightningNode = phoenixd.NewPhoenixClient("baseUrl", "password")
+// var lightningClient = phoenixd.NewPhoenixClient("http://127.0.0.1:9740", "")
+// var lightningNode = phoenixd.PhoenixNode{Client: lightningClient}
 
 var (
 	config = service.NewConfig([]service.Service{
-		service.NewService(serviceName, 1500),
+		service.NewService("image", 0),
 	})
 	secretStore = secrets.NewSecretFactory()
 	challenger  = mock.NewChallenger()
-	// challenger = phoenixd.PhoenixNode { Client: lightningNode }
+	// challenger = &challenge.ChallengeFactory{
+	// 	LightningNode: &lightningNode,
+	// }
 )
 
 func main() {
@@ -49,7 +49,6 @@ func main() {
 
 	log.Printf("Server launched at %s\n", host)
 	http.HandleFunc("/", handler.handleAuthorization)
-	// http.HandleFunc("/preflight", handlePreflight)
 	err := http.ListenAndServe(host, nil)
 	if err != nil {
 		log.Fatalf("Server failed to start: %v\n", err)
@@ -59,7 +58,6 @@ func main() {
 func handlePreflight(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, WWW-Authenticate")
 	w.WriteHeader(http.StatusOK)
 }
@@ -70,6 +68,9 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	path := r.URL.Path
+	serviceName := strings.TrimPrefix(path, "/")
+
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Expose-Headers", "*")
 
@@ -78,8 +79,17 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 
 	if len(parts) != 2 || parts[0] != macaroonHeader {
 		uid := secrets.NewUserId()
+		serviceId := service.NewId(serviceName, 0)
 
-		pretoken, err := h.Minter.MintToken(uid, service.NewId(serviceName, 0))
+		// Check if service exists
+		_, err := config.GetService(serviceId)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, "%s", err)
+			return
+		}
+
+		pretoken, err := h.Minter.MintToken(uid, serviceId)
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
 			fmt.Fprintf(w, "%s", err)
@@ -121,6 +131,7 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 		Preimage: preimage,
 	}
 
+	// Check if the token is valid
 	err = h.Minter.AuthToken(&token)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -130,7 +141,15 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Authorization: %s", mac.UserId())
 
-	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+	switch serviceName {
+	case "image":
+		http.Redirect(w, r, "https://picsum.photos/1000", http.StatusFound)
+	case "geo":
+		http.Redirect(w, r, "https://picsum.photos/1000", http.StatusFound)
+	default:
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "Service not found")
+	}
 }
 
 func getEnv(key, defaultVal string) string {
