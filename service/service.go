@@ -3,6 +3,8 @@ package service
 import (
 	"fmt"
 	"lsat/macaroon"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -12,6 +14,9 @@ const (
 	BaseTier Tier = 0
 )
 
+// A callback function for the service.
+type TokenCallback func(any) error
+
 // Service represents the configuration of a service.
 type Service struct {
 	Name              string            // The name of the service.
@@ -20,10 +25,11 @@ type Service struct {
 	Duration          time.Duration     // The lifetime of the service.
 	FirstPartyCaveats []macaroon.Caveat // The caveats of the service.
 	Conditions        []Condition       // The conditions of the service.
+	Callback          TokenCallback     // The callback function for the service.
 }
 
 // Service represents the identifiers of a Service
-type ServiceId struct {
+type ServiceID struct {
 	Name string // The name of the service.
 	Tier Tier   // The tier or level of the service.
 }
@@ -39,18 +45,32 @@ func NewService(Name string, Price uint64) Service {
 	}
 }
 
-// Create a new service identifier.
-func NewId(Name string, Tier Tier) ServiceId {
-	return ServiceId{Name, Tier}
+func ParseServiceID(serviceStr string) (ServiceID, error) {
+	parts := strings.Split(serviceStr, ":")
+	if len(parts) != 2 {
+		return ServiceID{}, fmt.Errorf("invalid service ID format: %s", serviceStr)
+	}
+
+	tier, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return ServiceID{}, fmt.Errorf("invalid tier: %s", parts[1])
+	}
+
+	return ServiceID{Name: parts[0], Tier: Tier(tier)}, nil
 }
 
-func (service ServiceId) String() string {
+// Create a new service identifier.
+func NewId(Name string, Tier Tier) ServiceID {
+	return ServiceID{Name, Tier}
+}
+
+func (service ServiceID) String() string {
 	return fmt.Sprintf("%s:%d", service.Name, service.Tier)
 }
 
 // Returns the identifiers of a service.
-func (service *Service) Id() ServiceId {
-	return ServiceId{Name: service.Name, Tier: service.Tier}
+func (service *Service) Id() ServiceID {
+	return ServiceID{Name: service.Name, Tier: service.Tier}
 }
 
 // The base caveats of a service.

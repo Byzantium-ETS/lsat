@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	defaultService = "image"
+	defaultService = "image:0"
 )
 
-var serviceURL = getEnv("SERVICE_URL", "http://localhost:8080/"+defaultService)
+var serviceURL = getEnv("SERVICE_URL", "http://localhost:8080/service/"+defaultService)
 
 type TestClient struct {
 	tokenPath string
@@ -74,7 +74,7 @@ func (c *TestClient) sendTokenRequest() {
 	fmt.Println("Requesting Token...")
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", serviceURL, nil)
+	req, err := http.NewRequest("PUT", serviceURL, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return
@@ -149,6 +149,7 @@ func (c *TestClient) sendAuthorizationRequest(url string, token macaroon.Token) 
 		}
 
 		// body, _ := io.ReadAll(resp.Body)
+		// fmt.Println(string(body))
 		fmt.Println(resp.Status)
 	} else {
 		fmt.Println("Unexpected response status:", resp.Status)
@@ -169,7 +170,7 @@ func shareToken(store auth.TokenStore, token macaroon.Token) error {
 	expiryDate := time.Now().Add(5 * time.Minute)
 
 	// Creating the restricted macaroon
-	mac, err := token.Macaroon.Oven().WithThirdPartyCaveats(macaroon.NewCaveat(macaroon.ExpiryDateKey, expiryDate.Format(time.RFC3339))).Cook()
+	mac, err := token.Macaroon.Oven().WithThirdPartyCaveats(macaroon.NewCaveat(macaroon.ExpiryDateKey, expiryDate.Format(time.RFC3339))).Bake()
 	if err != nil {
 		return err
 	}

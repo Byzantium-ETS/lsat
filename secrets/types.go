@@ -11,40 +11,40 @@ const SecretSize = 32
 // Secret is a fixed-size byte array representing a secret value.
 type Secret [SecretSize]byte
 
-// UserId is a fixed-size byte array representing a user identifier.
-type UserId [SecretSize]byte
+// UserID is a fixed-size byte array representing a user identifier.
+type UserID [SecretSize]byte
 
 // NewUserId generates a new unique UserId.
-func NewUserId() UserId {
-	var uid UserId
+func NewUserId() UserID {
+	var uid UserID
 	rand.Read(uid[:]) // Fill the byte array with random data.
 	return uid
 }
 
 // MakeUserId creates a UserId from the provided byte slice.
-func MakeUserId(newUserId []byte) (UserId, error) {
+func MakeUserId(newUserId []byte) (UserID, error) {
 	nhlen := len(newUserId)
 	if nhlen != SecretSize {
-		return UserId{}, fmt.Errorf("invalid user_id length of %v, want %v",
+		return UserID{}, fmt.Errorf("invalid user_id length of %v, want %v",
 			nhlen, SecretSize)
 	}
 
-	var user_id UserId
+	var user_id UserID
 	copy(user_id[:], newUserId) // Copy the provided slice into the UserId byte array.
 
 	return user_id, nil
 }
 
 // MakeUserIdFromStr creates a UserId from a hex string.
-func MakeUserIdFromStr(newuser string) (UserId, error) {
+func MakeUserIdFromStr(newuser string) (UserID, error) {
 	if len(newuser) != SecretSize*2 {
-		return UserId{}, fmt.Errorf("invalid user_id string length of %v, "+
+		return UserID{}, fmt.Errorf("invalid user_id string length of %v, "+
 			"want %v", len(newuser), SecretSize*2)
 	}
 
 	user_id, err := hex.DecodeString(newuser)
 	if err != nil {
-		return UserId{}, err
+		return UserID{}, err
 	}
 
 	return MakeUserId(user_id)
@@ -71,7 +71,7 @@ func MakeSecret(newSecret []byte) (Secret, error) {
 	return secret, nil
 }
 
-func (u UserId) String() string {
+func (u UserID) String() string {
 	return hex.EncodeToString(u[:])
 }
 

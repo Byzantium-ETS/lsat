@@ -14,13 +14,13 @@ type Version = int8
 
 // Macaroon struct represents an LSAT (Lightning Service Authentication Token) macaroon.
 type Macaroon struct {
-	userId    secrets.UserId
+	userId    secrets.UserID
 	caveats   []Caveat
 	signature lntypes.Hash
 }
 
 // Uid returns the user ID associated with the macaroon.
-func (mac *Macaroon) UserId() secrets.UserId {
+func (mac *Macaroon) UserId() secrets.UserID {
 	return mac.userId
 }
 
