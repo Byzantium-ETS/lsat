@@ -3,6 +3,7 @@ package main
 import (
 	"lsat/auth"
 	"lsat/mock"
+	"lsat/proxy"
 	"lsat/secrets"
 	"lsat/service"
 	"net/http"
@@ -38,7 +39,7 @@ func main() {
 		},
 	)
 	minter := auth.NewMinter(config, secretStore, challenger)
-	router := LSATProxyServer{Minter: &minter}
+	router := proxy.L402ProxyServer{Minter: &minter}
 
 	router.Run()
 }

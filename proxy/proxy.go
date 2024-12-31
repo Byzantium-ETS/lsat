@@ -1,4 +1,4 @@
-package main
+package proxy
 
 import (
 	"fmt"
@@ -17,17 +17,16 @@ import (
 
 const (
 	macaroonHeader    = "L402"
-	defaultService    = "image"
 	authFailedMessage = "Authentication failed!"
 )
 
-// LSATProxyServer is a struct that contains the necessary information to handle service requests.
-type LSATProxyServer struct {
+// L402ProxyServer is a struct that contains the necessary information to handle service requests.
+type L402ProxyServer struct {
 	*auth.Minter
 }
 
 // Handle the minting of a new token.
-func (h *LSATProxyServer) HandleMint(c *gin.Context) {
+func (h *L402ProxyServer) HandleMint(c *gin.Context) {
 	serviceName := c.Param("service")
 	// Parse the service name.
 	serviceId, err := service.ParseServiceID(serviceName)
@@ -52,7 +51,7 @@ func (h *LSATProxyServer) HandleMint(c *gin.Context) {
 }
 
 // Handle the authorization of a token.
-func (h *LSATProxyServer) HandleToken(c *gin.Context) {
+func (h *L402ProxyServer) HandleToken(c *gin.Context) {
 	// Get service ID from the request
 	serviceName := c.Param("service")
 	serviceID, err := service.ParseServiceID(serviceName)
@@ -114,7 +113,7 @@ func (h *LSATProxyServer) HandleToken(c *gin.Context) {
 }
 
 // Run the service.
-func (h *LSATProxyServer) Run() {
+func (h *L402ProxyServer) Run() {
 	// Initialize the Gin router.
 	router := gin.Default()
 
