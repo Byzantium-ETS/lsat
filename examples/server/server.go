@@ -12,16 +12,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Connect to the phoenix node
-// var lightningClient = phoenixd.NewPhoenixClient("http://127.0.0.1:9740", "")
-// var lightningNode = phoenixd.PhoenixNode{Client: lightningClient}
-
 var (
-	secretStore = secrets.NewSecretFactory()
-	challenger  = mock.NewChallenger()
+	// Connect to the phoenix node
+	// lightningClient = phoenixd.NewPhoenixClient("http://127.0.0.1:9740", "")
+	// lightningNode = phoenixd.PhoenixNode{Client: lightningClient}
 	// challenger = &challenge.ChallengeFactory{
 	// 	LightningNode: &lightningNode,
 	// }
+	secretStore = secrets.NewSecretFactory()
+	challenger  = mock.NewChallenger()
 )
 
 func main() {
@@ -30,6 +29,7 @@ func main() {
 			Name:       "image",
 			Tier:       service.BaseTier,
 			Duration:   time.Hour,
+			Price:      100,
 			Conditions: []service.Condition{service.Timeout{}},
 			Callback: func(c any) error {
 				ctx := c.(*gin.Context)
