@@ -17,8 +17,8 @@ const (
 var testService service.Service = service.NewService("image", 1000)
 
 func TestExpiryValid(t *testing.T) {
-	serviceLimiter := service.NewConfig([]service.Service{
-		{
+	serviceLimiter := service.NewConfig(
+		service.Service{
 			Name:     serviceName,
 			Price:    servicePrice,
 			Tier:     service.BaseTier,
@@ -27,7 +27,7 @@ func TestExpiryValid(t *testing.T) {
 				service.Timeout{},
 			},
 		},
-	})
+	)
 
 	caveat := macaroon.NewCaveat(macaroon.ExpiryDateKey, time.Now().Add(time.Hour).Format(time.RFC3339))
 
@@ -39,8 +39,8 @@ func TestExpiryValid(t *testing.T) {
 }
 
 func TestExpiryInvalid(t *testing.T) {
-	serviceLimiter := service.NewConfig([]service.Service{
-		{
+	serviceLimiter := service.NewConfig(
+		service.Service{
 			Name:     serviceName,
 			Price:    servicePrice,
 			Tier:     service.BaseTier,
@@ -49,7 +49,7 @@ func TestExpiryInvalid(t *testing.T) {
 				service.Timeout{},
 			},
 		},
-	})
+	)
 
 	caveat := macaroon.NewCaveat(macaroon.ExpiryDateKey, time.Now().Add(-time.Hour).Format(time.RFC3339))
 
@@ -63,8 +63,8 @@ func TestExpiryInvalid(t *testing.T) {
 }
 
 func TestCapabilities(t *testing.T) {
-	serviceLimiter := service.NewConfig([]service.Service{
-		{
+	serviceLimiter := service.NewConfig(
+		service.Service{
 			Name:     serviceName,
 			Price:    servicePrice,
 			Tier:     service.BaseTier,
@@ -73,7 +73,7 @@ func TestCapabilities(t *testing.T) {
 				service.Capabilities{Key: "resolution"},
 			},
 		},
-	})
+	)
 
 	err := serviceLimiter.VerifyCaveats(
 		macaroon.NewCaveat("service", testService.Id().String()),
@@ -90,8 +90,8 @@ func TestCapabilities(t *testing.T) {
 }
 
 func TestUniqueKey(t *testing.T) {
-	serviceLimiter := service.NewConfig([]service.Service{
-		{
+	serviceLimiter := service.NewConfig(
+		service.Service{
 			Name:     serviceName,
 			Price:    servicePrice,
 			Tier:     service.BaseTier,
@@ -100,7 +100,7 @@ func TestUniqueKey(t *testing.T) {
 				service.Capabilities{Key: "url"},
 			},
 		},
-	})
+	)
 
 	err := serviceLimiter.VerifyCaveats(
 		macaroon.NewCaveat("service", testService.Id().String()),
@@ -125,7 +125,7 @@ func TestService(t *testing.T) {
 
 	service_id := targetService.Id()
 
-	serviceLimiter := service.NewConfig([]service.Service{targetService})
+	serviceLimiter := service.NewConfig(targetService)
 
 	service, err := serviceLimiter.GetService(service_id)
 

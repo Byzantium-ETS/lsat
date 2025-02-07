@@ -10,13 +10,16 @@ import (
 	"lsat/macaroon"
 	"lsat/mock"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
 
 const (
-	authURL = "http://localhost:8080"
+	defaultService = "image:0"
 )
+
+var serviceURL = getEnv("SERVICE_URL", "http://localhost:8080/service/"+defaultService)
 
 type TestClient struct {
 	tokenPath string
@@ -34,14 +37,15 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		client.sendAuthorizationRequest(authURL, *token)
+		client.sendAuthorizationRequest(serviceURL, *token)
 	}
 }
 
 var lightningNode = mock.TestLightningNode{Balance: 10000}
 
 // Connect to the phoenix node
-// var lightningNode = phoenixd.NewPhoenixClient("baseUrl", "password")
+// var lightningClient = phoenixd.NewPhoenixClient("http://127.0.0.1:9740", "")
+// var lightningNode = phoenixd.PhoenixNode{Client: lightningClient}
 
 func parsePreToken(mac string, invoice string) (macaroon.PreToken, error) {
 	Macaroon, err := decodeMacaroon(mac)
@@ -70,7 +74,7 @@ func (c *TestClient) sendTokenRequest() {
 	fmt.Println("Requesting Token...")
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", authURL, nil)
+	req, err := http.NewRequest("PUT", serviceURL, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return
@@ -106,7 +110,7 @@ func (c *TestClient) sendTokenRequest() {
 			}
 
 			fmt.Println(token.Macaroon.ToJSON())
-			c.sendAuthorizationRequest(authURL, token)
+			c.sendAuthorizationRequest(serviceURL, token)
 		}
 	} else {
 		body, _ := io.ReadAll(resp.Body)
@@ -145,6 +149,7 @@ func (c *TestClient) sendAuthorizationRequest(url string, token macaroon.Token) 
 		}
 
 		// body, _ := io.ReadAll(resp.Body)
+		// fmt.Println(string(body))
 		fmt.Println(resp.Status)
 	} else {
 		fmt.Println("Unexpected response status:", resp.Status)
@@ -165,7 +170,7 @@ func shareToken(store auth.TokenStore, token macaroon.Token) error {
 	expiryDate := time.Now().Add(5 * time.Minute)
 
 	// Creating the restricted macaroon
-	mac, err := token.Macaroon.Oven().WithThirdPartyCaveats(macaroon.NewCaveat(macaroon.ExpiryDateKey, expiryDate.Format(time.RFC3339))).Cook()
+	mac, err := token.Macaroon.Oven().WithThirdPartyCaveats(macaroon.NewCaveat(macaroon.ExpiryDateKey, expiryDate.Format(time.RFC3339))).Bake()
 	if err != nil {
 		return err
 	}
@@ -177,4 +182,11 @@ func shareToken(store auth.TokenStore, token macaroon.Token) error {
 	store.StoreToken(token.Id(), token)
 
 	return nil
+}
+
+func getEnv(key, defaultVal string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return defaultVal
 }

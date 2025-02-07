@@ -10,7 +10,7 @@ import (
 
 // Oven bakes macaroons by combining the root secret, user ID, and caveats.
 type Oven struct {
-	userId   secrets.UserId
+	userId   secrets.UserID
 	root     secrets.Secret
 	caveats  []Caveat
 	macaroon *Macaroon
@@ -24,7 +24,7 @@ func NewOven(root secrets.Secret) Oven {
 }
 
 // Sets the user ID in the Oven.
-func (oven Oven) WithUserId(uid secrets.UserId) Oven {
+func (oven Oven) WithUserId(uid secrets.UserID) Oven {
 	oven.userId = uid
 	return oven
 }
@@ -46,8 +46,8 @@ func (oven Oven) WithFirstPartyCaveats(caveats ...Caveat) Oven {
 	return oven
 }
 
-// Cook computes the signature of the Macaroon and returns it.
-func (oven Oven) Cook() (Macaroon, error) {
+// Bake computes the signature of the Macaroon and returns it.
+func (oven Oven) Bake() (Macaroon, error) {
 	// Create a new HMAC with SHA-256 using the root secret as the key
 	mac := hmac.New(sha256.New, oven.root[:])
 

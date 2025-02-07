@@ -21,14 +21,17 @@ type Minter struct {
 	challenger challenge.Challenger
 }
 
+// NewMinter creates a new Minter.
 func NewMinter(service service.ServiceManager, secrets secrets.SecretStore, challenger challenge.Challenger) Minter {
 	return Minter{service, secrets, challenger}
 }
 
+// ServiceManager returns the service manager.
 func (minter *Minter) SecretStore() secrets.SecretStore {
 	return minter.secrets
 }
 
+// totalPrice calculates the total price of the requested services.
 func totalPrice(services ...service.Service) uint64 {
 	var total uint64 = 0
 	for _, s := range services {
@@ -37,8 +40,13 @@ func totalPrice(services ...service.Service) uint64 {
 	return total
 }
 
+// ServiceManager returns the service manager.
+func (minter *Minter) ServiceManager() service.ServiceManager {
+	return minter.service
+}
+
 // MintToken generates a new pre-token for the user.
-func (minter *Minter) MintToken(uid secrets.UserId, service_id service.ServiceId) (macaroon.PreToken, error) {
+func (minter *Minter) MintToken(uid secrets.UserID, service_id service.ServiceID) (macaroon.PreToken, error) {
 	// Initialize an empty pre-token.
 	token := macaroon.PreToken{}
 
@@ -71,7 +79,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_id service.ServiceId
 	oven := macaroon.NewOven(secret)
 
 	// Cook the Macaroon with the user ID, requested services, and retrieved capabilities.
-	mac, err := oven.WithUserId(uid).WithFirstPartyCaveats(caveats...).Cook()
+	mac, err := oven.WithUserId(uid).WithFirstPartyCaveats(caveats...).Bake()
 	if err != nil {
 		return token, err
 	}
@@ -79,7 +87,7 @@ func (minter *Minter) MintToken(uid secrets.UserId, service_id service.ServiceId
 	// Store the Macaroon in the secrets archive.
 	token.Macaroon, _ = mac.Oven().WithFirstPartyCaveats(macaroon.Caveat{
 		Key: macaroon.PaymentHashKey, Value: result.PaymentHash.String(),
-	}).Cook()
+	}).Bake()
 
 	// Return the generated pre-token.
 	return token, nil
@@ -105,7 +113,7 @@ func (minter *Minter) AuthToken(token *macaroon.Token) error {
 func (minter *Minter) AuthMacaroon(mac *macaroon.Macaroon) error {
 	secret, _ := minter.secrets.GetSecret(mac.UserId())
 	oven := macaroon.NewOven(secret)
-	nmac, _ := oven.WithThirdPartyCaveats(mac.Caveats()...).Cook()
+	nmac, _ := oven.WithThirdPartyCaveats(mac.Caveats()...).Bake()
 
 	// Verify the signature.
 	if mac.Signature() != nmac.Signature() {

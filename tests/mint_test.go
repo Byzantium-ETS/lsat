@@ -9,9 +9,9 @@ import (
 )
 
 func TestMintAuthMacaroon(t *testing.T) {
-	serviceLimiter := service.NewConfig([]service.Service{
+	serviceLimiter := service.NewConfig(
 		service.NewService(serviceName, servicePrice),
-	})
+	)
 
 	uid := secretStore.NewUser()
 
@@ -33,9 +33,9 @@ func TestMintAuthMacaroon(t *testing.T) {
 }
 
 func TestMintAuthToken(t *testing.T) {
-	serviceLimiter := service.NewConfig([]service.Service{
+	serviceLimiter := service.NewConfig(
 		service.NewService(serviceName, servicePrice),
-	})
+	)
 
 	lightningNode := mock.TestLightningNode{Balance: 1000}
 

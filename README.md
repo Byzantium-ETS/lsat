@@ -24,7 +24,7 @@ To get started, follow these instructions:
    Open a terminal and run the following command to start the server:
 
    ```sh
-   go run ./server/main.go
+   go run ./examples/server/server.go
    # 2024/06/09 09:21:20 Server launched at localhost:8080
    ```
 
@@ -33,7 +33,7 @@ To get started, follow these instructions:
    In another terminal, run the following command to mint a token and access the service:
 
    ```sh
-   go run ./client/main.go
+   go run ./examples/client/server.go
    # Requesting Token...
    # {"user_id":"...","caveats": "...","signature":"..."}
    # Sending Authorization Request...

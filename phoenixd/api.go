@@ -195,6 +195,10 @@ func (c *PhoenixClient) PayInvoice(req *PayInvoiceRequest) (*PaymentResponse, er
 		return nil, err
 	}
 
+	if paymentResponse.PaymentPreimage == "" {
+		return nil, errors.New(string(body))
+	}
+
 	return &paymentResponse, nil
 }
 
