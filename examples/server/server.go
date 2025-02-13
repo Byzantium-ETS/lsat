@@ -26,12 +26,14 @@ var (
 func main() {
 	config := service.NewConfig(
 		service.Service{
-			Name:       "image",
-			Tier:       service.BaseTier,
-			Duration:   time.Hour,
-			Price:      100,
-			Conditions: []service.Condition{service.Timeout{}},
-			Callback: func(c any) error {
+			Name:  "image",
+			Tier:  service.BaseTier,
+			Price: 100,
+			FirstPartyCaveats: []service.Caveat{
+				service.Expire{Delay: time.Hour},
+			},
+			Conditions: []service.Condition{service.Expire{}},
+			Get: func(c any) error {
 				ctx := c.(*gin.Context)
 				ctx.Redirect(http.StatusFound, "https://picsum.photos/1000")
 				return nil

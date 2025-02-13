@@ -9,6 +9,7 @@ import (
 const (
 	ServiceKey     string = "service"
 	ExpiryDateKey  string = "expiry_date"
+	NotBeforeKey   string = "not_before"
 	PaymentHashKey string = "payment_hash"
 )
 
@@ -21,6 +22,14 @@ type Caveat struct {
 // A new caveat.
 func NewCaveat(Key string, Value string) Caveat {
 	return Caveat{Key, Value}
+}
+
+func (caveat Caveat) GetKey() string {
+	return caveat.Key
+}
+
+func (caveat Caveat) GetValue() string {
+	return caveat.Value
 }
 
 func (caveat Caveat) String() string {

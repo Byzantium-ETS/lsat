@@ -5,7 +5,6 @@ import (
 	"lsat/macaroon"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type Tier = int8
@@ -16,16 +15,17 @@ const (
 
 // A callback function for the service.
 type TokenCallback func(any) error
+type PostCallback func(any) error
 
 // Service represents the configuration of a service.
 type Service struct {
-	Name              string            // The name of the service.
-	Tier              Tier              // The tier or level of the service.
-	Price             uint64            // The price in milli-satoshi.
-	Duration          time.Duration     // The lifetime of the service.
-	FirstPartyCaveats []macaroon.Caveat // The caveats of the service.
-	Conditions        []Condition       // The conditions of the service.
-	Callback          TokenCallback     // The callback function for the service.
+	Name              string        // The name of the service.
+	Tier              Tier          // The tier or level of the service.
+	Price             uint64        // The price in milli-satoshi.
+	FirstPartyCaveats []Caveat      // The caveats of the service.
+	Conditions        []Condition   // The conditions of the service.
+	Get               TokenCallback // The callback function on GET request.
+	Post              PostCallback  // The callback function on POST request.
 }
 
 // Service represents the identifiers of a Service
@@ -40,8 +40,7 @@ func NewService(Name string, Price uint64) Service {
 		Name:       Name,
 		Price:      Price,
 		Tier:       BaseTier,
-		Duration:   time.Hour,
-		Conditions: []Condition{Timeout{}},
+		Conditions: []Condition{},
 	}
 }
 
@@ -75,11 +74,11 @@ func (service *Service) Id() ServiceID {
 
 // The base caveats of a service.
 func (service *Service) Caveats() []macaroon.Caveat {
-	expiry := time.Now().Add(service.Duration)
 	caveats := []macaroon.Caveat{
 		macaroon.NewCaveat(macaroon.ServiceKey, service.Id().String()),
-		macaroon.NewCaveat(macaroon.ExpiryDateKey, expiry.Format(time.RFC3339)),
 	}
-	caveats = append(caveats, service.FirstPartyCaveats...)
+	for _, caveat := range service.FirstPartyCaveats {
+		caveats = append(caveats, ToCaveat(caveat))
+	}
 	return caveats
 }

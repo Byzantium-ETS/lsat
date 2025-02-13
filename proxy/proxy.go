@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"errors"
 	"fmt"
 	"lsat/auth"
 	"lsat/macaroon"
@@ -29,7 +30,7 @@ type L402ProxyServer struct {
 func (h *L402ProxyServer) HandleMint(c *gin.Context) {
 	serviceName := c.Param("service")
 	// Parse the service name.
-	serviceId, err := service.ParseServiceID(serviceName)
+	serviceID, err := service.ParseServiceID(serviceName)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -37,7 +38,7 @@ func (h *L402ProxyServer) HandleMint(c *gin.Context) {
 
 	// Mint a new token.
 	uid := secrets.NewUserId()
-	pretoken, err := h.Minter.MintToken(uid, serviceId)
+	pretoken, err := h.Minter.MintToken(uid, serviceID)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
@@ -48,6 +49,76 @@ func (h *L402ProxyServer) HandleMint(c *gin.Context) {
 	authHeader := fmt.Sprintf("%s macaroon=\"%s\", invoice=\"%s\"", macaroonHeader, mac, pretoken.InvoiceResponse.Invoice)
 	c.Header("WWW-Authenticate", authHeader)
 	c.JSON(http.StatusPaymentRequired, gin.H{"error": "Payment Required"})
+}
+
+// Parse a token from the Authorization header.
+func parseToken(authHeader string) (macaroon.Token, error) {
+	// Get the Authorization header from the request
+	parts := strings.Split(authHeader, " ")
+
+	if len(parts) != 2 || parts[0] != macaroonHeader {
+		return macaroon.Token{}, errors.New("Invalid Authorization header")
+	}
+
+	credentials := strings.Split(parts[1], ":")
+	if len(credentials) != 2 {
+		return macaroon.Token{}, errors.New("Invalid credentials")
+	}
+
+	mac, err := macaroon.DecodeBase64(credentials[0])
+	if err != nil {
+		return macaroon.Token{}, err
+	}
+
+	preimage, err := lntypes.MakePreimageFromStr(credentials[1])
+	if err != nil {
+		return macaroon.Token{}, err
+	}
+
+	token := macaroon.Token{
+		Macaroon: mac,
+		Preimage: preimage,
+	}
+
+	return token, nil
+}
+
+// Handle an update on a service.
+func (h *L402ProxyServer) HandleUpdate(c *gin.Context) {
+	// Get service ID from the request
+	serviceName := c.Param("service")
+	serviceID, err := service.ParseServiceID(serviceName)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get the Authorization header from the request
+	authHeader := c.GetHeader("Authorization")
+
+	// Parse the token from the Authorization header
+	token, err := parseToken(authHeader)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if the token is valid.
+	err = h.Minter.AuthToken(&token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Execute callbacks for this service
+	if service, err := h.Minter.ServiceManager().GetService(serviceID); err == nil {
+		if service.Get != nil {
+			if err := service.Post(c); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			}
+			return
+		}
+	}
 }
 
 // Handle the authorization of a token.
@@ -62,35 +133,9 @@ func (h *L402ProxyServer) HandleToken(c *gin.Context) {
 
 	// Get the Authorization header from the request
 	authHeader := c.GetHeader("Authorization")
-	parts := strings.Split(authHeader, " ")
 
-	if len(parts) != 2 || parts[0] != macaroonHeader {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Authorization header"})
-		return
-	}
-
-	credentials := strings.Split(parts[1], ":")
-	if len(credentials) != 2 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	mac, err := macaroon.DecodeBase64(credentials[0])
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-
-	preimage, err := lntypes.MakePreimageFromStr(credentials[1])
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-
-	token := macaroon.Token{
-		Macaroon: mac,
-		Preimage: preimage,
-	}
+	// Parse the token from the Authorization header
+	token, err := parseToken(authHeader)
 
 	// Check if the token is valid.
 	err = h.Minter.AuthToken(&token)
@@ -101,8 +146,8 @@ func (h *L402ProxyServer) HandleToken(c *gin.Context) {
 
 	// Execute callbacks for this service
 	if service, err := h.Minter.ServiceManager().GetService(serviceID); err == nil {
-		if service.Callback != nil {
-			if err := service.Callback(c); err != nil {
+		if service.Get != nil {
+			if err := service.Get(c); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			}
 			return
@@ -137,6 +182,7 @@ func (h *L402ProxyServer) Run() {
 
 	// Define the routes.
 	router.PUT("/service/:service", h.HandleMint)
+	router.POST("/service/:service", h.HandleUpdate)
 	router.GET("/service/:service", h.HandleToken)
 
 	// Start the server.
