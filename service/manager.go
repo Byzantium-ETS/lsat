@@ -50,7 +50,7 @@ func (c *Config) VerifyCaveats(caveats ...macaroon.Caveat) error {
 		service_id, _ := ParseServiceID(service_str)
 		service, _ := c.services[service_id]
 		for _, condition := range service.Conditions {
-			err := condition.Satisfy(caveats)
+			err := condition.Satisfy(caveats...)
 			if err != nil {
 				return err
 			}

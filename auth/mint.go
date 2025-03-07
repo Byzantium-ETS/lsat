@@ -98,7 +98,7 @@ func (minter *Minter) AuthToken(token *macaroon.Token) error {
 	// Verify the preimage
 	paymentHashIter := token.Macaroon.GetValue(macaroon.PaymentHashKey)
 	if !paymentHashIter.HasNext() {
-		return errors.New(permErr)
+		return errors.New(hashErr)
 	}
 
 	if token.Preimage.Hash().String() != paymentHashIter.Next() {

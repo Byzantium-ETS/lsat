@@ -47,6 +47,11 @@ package macaroon {
     preimage string
   }
 
+  class "Caveat" as Ca {
+    key string
+    value string
+  }
+
   class "PreToken" as pToken {
     macaroon Macaroon
     invoice InvoiceResponse
@@ -91,11 +96,6 @@ package service {
     price int64
     tier uint8
     conditions []Condition
-  }
-
-  class "Caveat" as Ca {
-    key string
-    value string
   }
 
   interface "ServiceManager" as SM <<L402>> {
